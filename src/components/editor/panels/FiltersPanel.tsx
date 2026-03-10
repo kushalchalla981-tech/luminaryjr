@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { useEditorStore } from '../../../store/editorStore';
 import { filterCategories, FilterPreset } from '../../../store/filterPresets';
 

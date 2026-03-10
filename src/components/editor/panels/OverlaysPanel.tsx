@@ -1,4 +1,4 @@
-import React from 'react';
+import {  } from 'react';
 import { useEditorStore } from '../../../store/editorStore';
 
 export function OverlaysPanel() {

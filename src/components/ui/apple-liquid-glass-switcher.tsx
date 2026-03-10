@@ -76,10 +76,6 @@ export function ThemeSwitcher({
   onValueChange,
 }: ThemeSwitcherProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
-  const [previousOption, setPreviousOption] = useState<string | null>(
-    themeOptions.find((opt) => opt.value === (value ?? internalValue))
-      ?.cOption || null
-  );
 
   const activeValue = value ?? internalValue;
 
@@ -90,10 +86,6 @@ export function ThemeSwitcher({
   }, [value]);
 
   const handleChange = (newValue: Theme) => {
-    const currentOption = themeOptions.find(
-      (opt) => opt.value === activeValue
-    )?.cOption;
-    setPreviousOption(currentOption || null);
 
     if (onValueChange) {
       onValueChange(newValue);
@@ -101,11 +93,6 @@ export function ThemeSwitcher({
       setInternalValue(newValue);
     }
   };
-
-  const previousCAttribute = themeOptions.find(
-    (opt) => opt.value === previousOption
-  )?.cOption;
-
   return (
     <fieldset
       className="switcher"
