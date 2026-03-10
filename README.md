@@ -1,15 +1,6 @@
 <div align="center">
 
-```ansi
-[35m  _                     _                       _         [0m
-[34m | |                   (_)                     | |        [0m
-[36m | |    _   _ _ __ ___  _ _ __   __ _ _ __ _   | | ___    [0m
-[32m | |   | | | | '_ ` _ \| | '_ \ / _` | '__| |  | |/ __|   [0m
-[33m | |___| |_| | | | | | | | | | | (_| | |  | |__| | '__    [0m
-[31m |______\__,_|_| |_| |_|_|_| |_|\__,_|_|   \____/|___|    [0m
-                                                          
-           [35m✨[0m [36mThe Most Fun Photo Editor Around![0m [35m✨[0m          
-```
+<img src="./public/ascii-logo.svg" alt="LuminaryJr Logo" width="100%" />
 
 Welcome to **LuminaryJr**! The most playful, powerful, and magical photo editing application designed for everyone to unleash their inner artist. 🎨🚀
 
