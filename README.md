@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./public/luminary-solid.svg" alt="LuminaryJr Logo" width="100%" />
+<img src="./public/luminary-v2.svg" alt="LuminaryJr Logo" width="100%" />
 
 Welcome to **LuminaryJr**! The most playful, powerful, and magical photo editing application designed for everyone to unleash their inner artist. 🎨🚀
 
