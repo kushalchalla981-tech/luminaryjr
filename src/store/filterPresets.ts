@@ -1,0 +1,118 @@
+import { WebGLAdjustments } from './editorStore';
+
+export interface FilterPreset {
+    name: string;
+    adjustments: Partial<WebGLAdjustments>;
+}
+
+export const filterCategories = [
+    {
+        name: "Apple Core",
+        filters: [
+            { name: "Original", adjustments: {} },
+            { name: "Vivid", adjustments: { contrast: 15, saturation: 25, brightness: 5, vibrance: 10 } },
+            { name: "Vivid Warm", adjustments: { contrast: 15, saturation: 25, brightness: 5, warmth: 30 } },
+            { name: "Vivid Cool", adjustments: { contrast: 15, saturation: 25, brightness: 5, warmth: -30 } },
+            { name: "Dramatic", adjustments: { contrast: 40, highlights: -20, shadows: -10, saturation: -10, vignette: 15 } },
+            { name: "Dramatic Warm", adjustments: { contrast: 40, highlights: -20, shadows: -10, saturation: -10, warmth: 25, vignette: 15 } },
+            { name: "Dramatic Cool", adjustments: { contrast: 40, highlights: -20, shadows: -10, saturation: -10, warmth: -25, vignette: 15 } },
+            { name: "Mono", adjustments: { saturation: -100, contrast: 10 } },
+            { name: "Silvertone", adjustments: { saturation: -100, contrast: 20, highlights: 15, shadows: -10 } },
+            { name: "Noir", adjustments: { saturation: -100, contrast: 50, vignette: 30, exposure: -5 } },
+        ]
+    },
+    {
+        name: "Enhance",
+        filters: [
+            { name: "Auto", adjustments: { exposure: 5, contrast: 10, vibrance: 15, sharpness: 10 } },
+            { name: "Enhance", adjustments: { brightness: 10, saturation: 15, contrast: 15 } },
+            { name: "Warm", adjustments: { warmth: 40, tint: 5 } },
+            { name: "Cool", adjustments: { warmth: -40, tint: -5 } },
+            { name: "Deep", adjustments: { contrast: 30, shadows: -20, saturation: 10 } },
+            { name: "Light", adjustments: { exposure: 15, highlights: -10, contrast: -5 } },
+            { name: "Portrait", adjustments: { exposure: 5, warmth: 10, contrast: 5, vibrance: 5 } },
+            { name: "Color Pop", adjustments: { vibrance: 40, saturation: 20, contrast: 10 } },
+            { name: "Black and White", adjustments: { saturation: -100 } },
+            { name: "Sepia", adjustments: { saturation: -80, warmth: 80, tint: 20 } },
+        ]
+    },
+    {
+        name: "Instagram Classic",
+        filters: [
+            { name: "Clarendon", adjustments: { brightness: 10, contrast: 20, saturation: 15, warmth: -10, tint: 10 } },
+            { name: "Gingham", adjustments: { brightness: 5, contrast: -10, saturation: -15, warmth: 10 } },
+            { name: "Juno", adjustments: { contrast: 15, saturation: 20, warmth: 20, tint: 10, vignette: 10 } },
+            { name: "Lark", adjustments: { exposure: 10, saturation: 10, warmth: -10, vibrance: 15 } },
+            { name: "Ludwig", adjustments: { contrast: -5, saturation: -10, warmth: -5, exposure: 5 } },
+            { name: "Aden", adjustments: { contrast: -15, saturation: -15, warmth: 15, exposure: 5 } },
+            { name: "Valencia", adjustments: { exposure: 10, warmth: 25, contrast: 5 } },
+            { name: "Amaro", adjustments: { exposure: 15, contrast: -5, saturation: 5 } },
+            { name: "Reyes", adjustments: { exposure: 20, contrast: -20, warmth: 15 } },
+            { name: "Hudson", adjustments: { exposure: 5, contrast: 10, warmth: -20, saturation: -5 } },
+            { name: "Rise", adjustments: { exposure: 10, warmth: 15, contrast: -5, vignette: 10 } },
+            { name: "Sierra", adjustments: { contrast: -10, exposure: 10, warmth: 10 } },
+            { name: "Perpetua", adjustments: { contrast: 10, warmth: -10, tint: 15 } },
+            { name: "Mayfair", adjustments: { exposure: 5, contrast: 15, warmth: 5, vignette: 10 } },
+            { name: "Hefe", adjustments: { contrast: 25, saturation: 20, warmth: 10, vignette: 20 } },
+            { name: "X Pro II", adjustments: { contrast: 30, saturation: 25, warmth: 15, vignette: 40 } },
+            { name: "Lo Fi", adjustments: { contrast: 40, saturation: 30, shadows: -10 } },
+            { name: "Crema", adjustments: { contrast: -10, exposure: 10, warmth: 15, saturation: -10 } },
+            { name: "Moon", adjustments: { saturation: -100, contrast: -10, exposure: 5 } },
+            { name: "Slumber", adjustments: { contrast: -15, saturation: -20, warmth: 15 } },
+            { name: "Aurelia", adjustments: { contrast: -5, saturation: 15, warmth: 20, tint: -10 } },
+            { name: "Kelvin", adjustments: { warmth: 40, saturation: 30, contrast: -5 } },
+            { name: "Nashville", adjustments: { exposure: 10, contrast: -15, warmth: 30, tint: 20 } },
+            { name: "Toaster", adjustments: { exposure: 5, contrast: -5, warmth: 30, vignette: 30 } },
+            { name: "Willow", adjustments: { saturation: -100, contrast: -10, exposure: 10, warmth: 10 } },
+            { name: "Inkwell", adjustments: { saturation: -100, contrast: 20 } },
+            { name: "Dogpatch", adjustments: { contrast: 30, warmth: 5 } },
+            { name: "Brannan", adjustments: { contrast: 15, warmth: -20, tint: 10, exposure: 5 } },
+            { name: "Earlybird", adjustments: { contrast: 5, warmth: 20, saturation: -10, vignette: 20 } },
+            { name: "1977", adjustments: { contrast: -10, saturation: 10, warmth: 15, tint: 30 } },
+            { name: "Sutro", adjustments: { contrast: 30, saturation: 10, vignette: 40, exposure: -5 } },
+            { name: "Charmes", adjustments: { contrast: 15, warmth: 15, tint: -5 } },
+            { name: "Brooklyn", adjustments: { exposure: 5, contrast: -5, warmth: -10, tint: 10 } },
+            { name: "Helena", adjustments: { contrast: 10, warmth: 10, tint: 5 } },
+            { name: "Ashby", adjustments: { contrast: 5, warmth: 15, saturation: -5 } },
+            { name: "Stinson", adjustments: { contrast: -15, exposure: 10, warmth: 5 } },
+            { name: "Skyline", adjustments: { contrast: 15, exposure: 15, vibrance: 10 } },
+        ]
+    },
+    {
+        name: "Cinematic & Film",
+        filters: [
+            { name: "Haunt", adjustments: { contrast: 30, saturation: -30, warmth: -10, tint: -10 } },
+            { name: "Cosmos", adjustments: { contrast: 20, vibrance: 40, warmth: -20 } },
+            { name: "Pure", adjustments: { exposure: 10, contrast: 10, saturation: -10 } },
+            { name: "Natural", adjustments: { exposure: 5, contrast: 5, vibrance: 5 } },
+            { name: "Soft", adjustments: { contrast: -15, exposure: 5, blur: 2 } },
+            { name: "Vintage", adjustments: { contrast: -20, saturation: -30, warmth: 30, noise: 15 } },
+            { name: "Film", adjustments: { contrast: 15, saturation: -10, warmth: 10, noise: 20 } },
+            { name: "Matte", adjustments: { contrast: -30, exposure: 15, shadows: 20 } },
+            { name: "Fade", adjustments: { contrast: -40, exposure: 20 } },
+            { name: "Glow", adjustments: { exposure: 10, contrast: 10, blur: 5, highlights: 20 } },
+            { name: "Bright", adjustments: { exposure: 20, contrast: 10, vibrance: 15 } },
+            { name: "HDR", adjustments: { contrast: 40, shadows: 40, highlights: -40, vibrance: 30, sharpness: 50 } },
+            { name: "Cool Matte", adjustments: { contrast: -20, warmth: -20, tint: 10 } },
+            { name: "Warm Vintage", adjustments: { contrast: -10, saturation: -15, warmth: 40, noise: 25 } },
+            { name: "Golden", adjustments: { exposure: 5, contrast: 10, warmth: 50, vibrance: 20 } },
+            { name: "Sunset", adjustments: { contrast: 15, warmth: 60, tint: 20, saturation: 30 } },
+            { name: "Teal and Orange", adjustments: { contrast: 30, warmth: 30, tint: -20, vibrance: 40 } },
+            { name: "Pastel", adjustments: { contrast: -20, exposure: 15, saturation: -10, tint: 10 } },
+            { name: "Moody", adjustments: { contrast: 40, exposure: -10, saturation: -20, warmth: -10, vignette: 30 } },
+            { name: "Dusty", adjustments: { contrast: -10, saturation: -40, warmth: 20, noise: 30 } },
+            { name: "Clean", adjustments: { exposure: 10, contrast: 15, vibrance: 10, sharpness: 20 } },
+            { name: "Cinematic", adjustments: { contrast: 50, warmth: -10, tint: 10, vignette: 20, shadows: -10 } },
+            { name: "Analog", adjustments: { contrast: -5, saturation: -15, warmth: 15, tint: 5, noise: 20, vignette: 10 } },
+            { name: "Retro Film", adjustments: { contrast: 10, saturation: -20, warmth: 30, tint: 10, noise: 25 } },
+            { name: "High Contrast", adjustments: { contrast: 80, saturation: 10 } },
+            { name: "Low Contrast", adjustments: { contrast: -60, exposure: 10 } },
+            { name: "Grain", adjustments: { noise: 50, contrast: 10 } },
+            { name: "Soft Glow", adjustments: { blur: 10, exposure: 15, contrast: -10 } },
+            { name: "Sharp Pop", adjustments: { sharpness: 80, contrast: 20, saturation: 20 } },
+            { name: "Classic Film", adjustments: { contrast: 20, saturation: -5, warmth: 10, tint: 5, noise: 15 } },
+            { name: "Cold Steel", adjustments: { contrast: 30, saturation: -20, warmth: -40, tint: 10 } },
+            { name: "Warm Glow", adjustments: { exposure: 10, contrast: 10, warmth: 30, blur: 5 } }
+        ]
+    }
+];

@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0f172a;
+  --color-foreground: #f8fafc;
+  --color-primary: #3b82f6;
+  --color-panel: rgba(30, 41, 59, 0.7);
+}
+
+
+/* Apple Liquid Glass Switcher Styles */
+.theme-provider {
+  min-height: 100vh;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+body {
+  background-color: #0f172a; /* Global dark mode default */
+  color: #f8fafc;
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Base styles for the switcher */
+.switcher {
+  position: relative;
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(12px);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.switcher__legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.switcher__option {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.switcher__option:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.switcher__option:has(input:checked) {
+  color: white;
+}
+
+.switcher__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.switcher__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  --c: currentColor;
+  z-index: 2;
+}
+
+/* The liquid blob background */
+.switcher::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--color-primary);
+  border-radius: 50%;
+  z-index: 1;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: url(#switcher);
+}
+
+/* Move the blob based on the selected option */
+.switcher:has(.switcher__option:nth-child(2) input:checked)::before {
+  transform: translateX(0);
+}
+
+.switcher:has(.switcher__option:nth-child(3) input:checked)::before {
+  transform: translateX(3rem);
+}
+
+.switcher:has(.switcher__option:nth-child(4) input:checked)::before {
+  transform: translateX(6rem);
+}
+
+.switcher__filter {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Provided Animations */
+@keyframes scaleToggle {
+  0% { scale: 1 1; }
+  50% { scale: 1.1 1; }
+  100% { scale: 1 1; }
+}
+
+@keyframes scaleToggle2 {
+  0% { scale: 1 1; }
+  50% { scale: 1.2 1; }
+  100% { scale: 1 1; }
+}
+
+@keyframes scaleToggle3 {
+  0% { scale: 1 1; }
+  50% { scale: 1.1 1; }
+  100% { scale: 1 1; }
+}
