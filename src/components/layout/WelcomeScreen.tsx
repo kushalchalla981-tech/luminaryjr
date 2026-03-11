@@ -45,7 +45,7 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
   return (
     <div className="relative h-full w-full flex items-center justify-center overflow-hidden">
 
-      {/* Glassmorphism Upload Area */}
+      {/* Floating Upload Area */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -53,27 +53,14 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
         className="relative z-10 w-full max-w-4xl"
       >
         <div className={cn(
-          "relative h-full w-full rounded-[2.5rem] p-2 transition-all duration-500",
+          "relative h-full w-full transition-all duration-500",
           isDragging ? "scale-[1.02]" : "scale-100"
         )}>
-          <GlowingEffect
-            spread={40}
-            glow={true}
-            disabled={false}
-            proximity={64}
-            inactiveZone={0.01}
-            borderWidth={3}
-          />
           
           <div 
-            className={`relative flex h-[60vh] w-full flex-col items-center justify-center rounded-[2rem] border border-white/10 backdrop-blur-[60px] shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-500 overflow-hidden ${
-              isDragging ? 'bg-white/10' : 'bg-white/[0.03]'
+            className={`relative flex h-[60vh] w-full flex-col items-center justify-center transition-all duration-500 ${
+              isDragging ? 'bg-white/5 rounded-[2rem]' : 'bg-transparent'
             }`}
-            style={{
-              WebkitBackdropFilter: "blur(60px)",
-              maskImage: "radial-gradient(ellipse at center, black 60%, transparent 100%)",
-              WebkitMaskImage: "radial-gradient(ellipse at center, black 60%, transparent 100%)"
-            }}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={onDrop}
@@ -83,8 +70,10 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 100, delay: 0.8 }}
-                className="mb-8 flex h-28 w-28 items-center justify-center rounded-full bg-white/5 border border-white/10 shadow-inner group"
+                className="mb-8 flex h-28 w-28 items-center justify-center rounded-full bg-black border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)] group relative"
               >
+                {/* Give the icon container a subtle glowing effect to make it stand out since it's floating */}
+                <div className="absolute inset-0 rounded-full shadow-[0_0_20px_rgba(255,215,0,0.15)] pointer-events-none" />
                 <UploadCloud size={48} className="text-yellow-400 group-hover:scale-110 transition-transform duration-300" />
               </motion.div>
               

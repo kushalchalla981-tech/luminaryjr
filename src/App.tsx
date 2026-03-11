@@ -34,10 +34,23 @@ function App() {
     setImageUrl(null);
   }, [imageUrl]);
 
+  const [zoomLevel, setZoomLevel] = useState(100);
+
   const handleExport = useCallback(() => {
     if (editorRef.current) {
       editorRef.current.exportImage();
     }
+  }, []);
+
+  const handleUndo = useCallback(() => editorRef.current?.undo(), []);
+  const handleRedo = useCallback(() => editorRef.current?.redo(), []);
+  const handleZoomIn = useCallback(() => {
+      editorRef.current?.zoomIn();
+      if (editorRef.current) setZoomLevel(editorRef.current.getZoom());
+  }, []);
+  const handleZoomOut = useCallback(() => {
+      editorRef.current?.zoomOut();
+      if (editorRef.current) setZoomLevel(editorRef.current.getZoom());
   }, []);
 
   return (
@@ -45,6 +58,11 @@ function App() {
       hasImage={!!activeImage} 
       onNewImage={handleCloseImage}
       onExport={handleExport}
+      onUndo={handleUndo}
+      onRedo={handleRedo}
+      onZoomIn={handleZoomIn}
+      onZoomOut={handleZoomOut}
+      zoomLevel={zoomLevel}
     >
       {!activeImage ? (
         <WelcomeScreen onImageSelect={handleImageSelect} />
@@ -55,20 +73,10 @@ function App() {
             */}
             
             {/* Left Toolbar */}
-            <div className="relative h-full flex flex-col z-20">
-              <div className="absolute inset-y-0 right-0 w-[0.75px] bg-white/10" />
-              <GlowingEffect
-                spread={20}
-                glow={true}
-                disabled={false}
-                proximity={64}
-                inactiveZone={0.01}
-                borderWidth={1}
-                className="rounded-none border-r border-transparent"
-              />
+            <div className="relative h-full flex flex-col z-20 pointer-events-none">
+              {/* Only the buttons should have pointer events, not the container */}
               <div
-                className="w-16 h-full flex flex-col items-center py-4 gap-4 bg-white/[0.03] backdrop-blur-[60px] border-r border-white/10 relative z-10 shadow-[8px_0_32px_0_rgba(0,0,0,0.5)] transition-all"
-                style={{ WebkitBackdropFilter: "blur(60px)" }}
+                className="w-16 h-full flex flex-col items-center py-4 gap-4 relative z-10 transition-all pointer-events-auto"
               >
                 <button 
                   onClick={() => setActiveTool('adjust')}
@@ -115,26 +123,19 @@ function App() {
             {/* Center Canvas Workspace */}
             <div className="flex-1 relative overflow-hidden">
                 <div className="absolute inset-0 z-0 bg-black/50" />
-                <div className="relative z-10 w-full h-full flex items-center justify-center border border-white/5 bg-transparent overflow-hidden">
+                {/*
+                  Make the center workspace visually extend under the "floating" panels.
+                  We removed the white borders and background.
+                */}
+                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden">
                   {imageUrl && <EditorWorkspace ref={editorRef} imageUrl={imageUrl} />}
                 </div>
             </div>
 
             {/* Right Properties Panel */}
-            <div className="relative h-full hidden md:flex flex-col z-20 shrink-0">
-                <div className="absolute inset-y-0 left-0 w-[0.75px] bg-white/10" />
-                <GlowingEffect
-                  spread={20}
-                  glow={true}
-                  disabled={false}
-                  proximity={64}
-                  inactiveZone={0.01}
-                  borderWidth={1}
-                  className="rounded-none border-l border-transparent"
-                />
+            <div className="relative h-full hidden md:flex flex-col z-20 shrink-0 pointer-events-none">
                 <div
-                  className="w-80 h-full bg-white/[0.03] backdrop-blur-[60px] border-l border-white/10 p-6 relative z-10 shadow-[-8px_0_32px_0_rgba(0,0,0,0.5)] overflow-hidden"
-                  style={{ WebkitBackdropFilter: "blur(60px)" }}
+                  className="w-80 h-full p-6 relative z-10 overflow-hidden pointer-events-auto"
                 >
                     {selectedObjectType ? (
                       <ObjectPropertiesPanel canvas={editorRef.current?.getCanvas() || null} />

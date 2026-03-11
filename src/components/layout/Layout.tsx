@@ -8,9 +8,17 @@ interface LayoutProps {
   hasImage: boolean;
   onExport: () => void;
   onNewImage: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  zoomLevel?: number;
 }
 
-export function Layout({ children, hasImage, onExport, onNewImage }: LayoutProps) {
+export function Layout({
+  children, hasImage, onExport, onNewImage,
+  onUndo, onRedo, onZoomIn, onZoomOut, zoomLevel = 100
+}: LayoutProps) {
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-black text-slate-100 transition-colors duration-500">
       
@@ -33,18 +41,18 @@ export function Layout({ children, hasImage, onExport, onNewImage }: LayoutProps
         {/* Center: Controls (Only show if image loaded) */}
         {hasImage && (
           <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/5 bg-white/5 p-1 backdrop-blur-md">
-            <button className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white text-slate-400 transition-colors" title="Undo">
+            <button onClick={onUndo} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white text-slate-400 transition-colors" title="Undo">
               <Undo size={16} />
             </button>
-            <button className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white text-slate-400 transition-colors" title="Redo">
+            <button onClick={onRedo} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white text-slate-400 transition-colors" title="Redo">
               <Redo size={16} />
             </button>
             <div className="mx-2 h-4 w-px bg-white/10" />
-            <button className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white text-slate-400 transition-colors" title="Zoom Out">
+            <button onClick={onZoomOut} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white text-slate-400 transition-colors" title="Zoom Out">
               <ZoomOut size={16} />
             </button>
-            <span className="w-12 text-center text-xs font-medium text-slate-300">100%</span>
-            <button className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white text-slate-400 transition-colors" title="Zoom In">
+            <span className="w-12 text-center text-xs font-medium text-slate-300">{zoomLevel}%</span>
+            <button onClick={onZoomIn} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white text-slate-400 transition-colors" title="Zoom In">
               <ZoomIn size={16} />
             </button>
           </div>

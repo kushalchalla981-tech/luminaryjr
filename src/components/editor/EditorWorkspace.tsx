@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { ImageSegmenter, FilesetResolver } from '@mediapipe/tasks-vision';
 import { useEditorStore } from '../../store/editorStore';
@@ -10,6 +10,11 @@ interface EditorWorkspaceProps {
 export interface EditorWorkspaceRef {
   exportImage: () => void;
   getCanvas: () => fabric.Canvas | null;
+  undo: () => void;
+  redo: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  getZoom: () => number;
 }
 
 export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspaceProps>(({ imageUrl }, ref) => {
@@ -45,6 +50,41 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
 
   const [cropRect, setCropRect] = useState<fabric.Rect | null>(null);
   const [segmenter, setSegmenter] = useState<ImageSegmenter | null>(null);
+
+  // History State
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const isHistoryAction = useRef(false);
+
+  const saveHistory = useCallback(() => {
+    if (!fabricCanvas || isHistoryAction.current) return;
+
+    const json = JSON.stringify(fabricCanvas.toJSON());
+
+    setHistory(prev => {
+        const newHistory = prev.slice(0, historyIndex + 1);
+        newHistory.push(json);
+        // Keep last 20 states to prevent massive memory usage
+        if (newHistory.length > 20) newHistory.shift();
+        return newHistory;
+    });
+
+    setHistoryIndex(prev => {
+        return Math.min(prev + 1, 19); // max index 19
+    });
+  }, [fabricCanvas, historyIndex]);
+
+  // Hook into canvas modifications to save history
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const events = ['object:added', 'object:removed', 'object:modified'];
+    events.forEach(e => fabricCanvas.on(e, saveHistory));
+
+    return () => {
+        events.forEach(e => fabricCanvas.off(e, saveHistory));
+    }
+  }, [fabricCanvas, saveHistory]);
 
   // Initialize MediaPipe AI Model on load
   useEffect(() => {
@@ -113,6 +153,15 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
       
       setMainImage(img);
 
+      // Save initial state
+      setTimeout(() => {
+          if (!isHistoryAction.current) {
+              const json = JSON.stringify(canvas.toJSON());
+              setHistory([json]);
+              setHistoryIndex(0);
+          }
+      }, 100);
+
       // --- Selection Event Handling ---
       const handleSelection = (e: { selected?: fabric.Object[] }) => {
         const activeObj = e.selected?.[0];
@@ -174,6 +223,9 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), zoom);
         e.preventDefault();
         e.stopPropagation();
+
+        // Note: we might want to dispatch an event to update App.tsx zoomLevel state,
+        // but polling via the imperative handle is enough for button clicks.
       }
     });
 
@@ -774,6 +826,51 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
+    undo: () => {
+        if (!fabricCanvas || historyIndex <= 0) return;
+
+        isHistoryAction.current = true;
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+
+        fabricCanvas.loadFromJSON(history[newIndex], () => {
+            fabricCanvas.requestRenderAll();
+            // Re-find main image after load
+            const objs = fabricCanvas.getObjects('image');
+            if (objs.length > 0) setMainImage(objs[0] as fabric.Image);
+            isHistoryAction.current = false;
+        });
+    },
+    redo: () => {
+        if (!fabricCanvas || historyIndex >= history.length - 1) return;
+
+        isHistoryAction.current = true;
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+
+        fabricCanvas.loadFromJSON(history[newIndex], () => {
+            fabricCanvas.requestRenderAll();
+            // Re-find main image after load
+            const objs = fabricCanvas.getObjects('image');
+            if (objs.length > 0) setMainImage(objs[0] as fabric.Image);
+            isHistoryAction.current = false;
+        });
+    },
+    zoomIn: () => {
+        if (!fabricCanvas) return;
+        let zoom = fabricCanvas.getZoom() * 1.1;
+        if (zoom > 20) zoom = 20;
+        fabricCanvas.zoomToPoint(new fabric.Point(fabricCanvas.width! / 2, fabricCanvas.height! / 2), zoom);
+    },
+    zoomOut: () => {
+        if (!fabricCanvas) return;
+        let zoom = fabricCanvas.getZoom() / 1.1;
+        if (zoom < 0.05) zoom = 0.05;
+        fabricCanvas.zoomToPoint(new fabric.Point(fabricCanvas.width! / 2, fabricCanvas.height! / 2), zoom);
+    },
+    getZoom: () => {
+        return fabricCanvas ? Math.round(fabricCanvas.getZoom() * 100) : 100;
+    },
     exportImage: () => {
       if (!fabricCanvas) return;
       
