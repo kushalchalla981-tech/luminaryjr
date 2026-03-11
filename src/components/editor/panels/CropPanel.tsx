@@ -53,16 +53,16 @@ export function CropPanel() {
         <div className="flex flex-col gap-3">
             <span className="text-xs font-semibold text-slate-400">Transform</span>
             <div className="grid grid-cols-4 gap-2">
-                <button onClick={() => handleRotate(-90)} className="h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors" title="Rotate Left">
+                <button onClick={() => handleRotate(-90)} className="h-10 rounded-lg bg-black hover:bg-zinc-900 border border-white/10 flex items-center justify-center text-white transition-colors" title="Rotate Left">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                 </button>
-                <button onClick={() => handleRotate(90)} className="h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors" title="Rotate Right">
+                <button onClick={() => handleRotate(90)} className="h-10 rounded-lg bg-black hover:bg-zinc-900 border border-white/10 flex items-center justify-center text-white transition-colors" title="Rotate Right">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
                 </button>
-                <button onClick={() => handleFlip('X')} className={`h-10 rounded-lg flex items-center justify-center transition-colors ${geometry.flipX ? 'bg-yellow-500 text-white' : 'bg-white/5 hover:bg-white/10 text-white'}`} title="Flip Horizontal">
+                <button onClick={() => handleFlip('X')} className={`h-10 rounded-lg flex items-center justify-center transition-colors ${geometry.flipX ? 'bg-yellow-500 text-white' : 'bg-black hover:bg-zinc-900 border border-white/10 text-white'}`} title="Flip Horizontal">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20v2"/><path d="M12 14v2"/><path d="M12 8v2"/><path d="M12 2v2"/><path d="M17 12c0-3.3-2.2-6-5-6v12c2.8 0 5-2.7 5-6Z"/><path d="M7 12c0-3.3 2.2-6 5-6v12c-2.8 0-5-2.7-5-6Z"/></svg>
                 </button>
-                <button onClick={() => handleFlip('Y')} className={`h-10 rounded-lg flex items-center justify-center transition-colors ${geometry.flipY ? 'bg-yellow-500 text-white' : 'bg-white/5 hover:bg-white/10 text-white'}`} title="Flip Vertical">
+                <button onClick={() => handleFlip('Y')} className={`h-10 rounded-lg flex items-center justify-center transition-colors ${geometry.flipY ? 'bg-yellow-500 text-white' : 'bg-black hover:bg-zinc-900 border border-white/10 text-white'}`} title="Flip Vertical">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h2"/><path d="M9 12h2"/><path d="M15 12h2"/><path d="M21 12h2"/><path d="M12 17c3.3 0 6-2.2 6-5H6c0 2.8 2.7 5 6 5Z"/><path d="M12 7c3.3 0 6 2.2 6 5H6c0-2.8 2.7-5 6-5Z"/></svg>
                 </button>
             </div>
@@ -129,7 +129,7 @@ export function CropPanel() {
                         className={`py-2 rounded-lg text-xs font-medium transition-colors ${
                             geometry.aspectRatio === ratio.value
                                 ? 'bg-yellow-500 text-white shadow-[0_0_10px_rgba(255,215,0,0.3)]'
-                                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                                : 'bg-black text-slate-400 hover:bg-zinc-900 border border-white/10 hover:text-white'
                         }`}
                     >
                         {ratio.label}

@@ -66,11 +66,11 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
           />
           
           <div 
-            className={`relative flex h-[60vh] w-full flex-col items-center justify-center rounded-[2rem] border border-white/10 backdrop-blur-[40px] shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-500 overflow-hidden ${
-              isDragging ? 'bg-white/10' : 'bg-white/5'
+            className={`relative flex h-[60vh] w-full flex-col items-center justify-center rounded-[2rem] border border-white/10 backdrop-blur-[60px] shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-500 overflow-hidden ${
+              isDragging ? 'bg-white/10' : 'bg-white/[0.03]'
             }`}
             style={{
-              WebkitBackdropFilter: "blur(40px)",
+              WebkitBackdropFilter: "blur(60px)",
               maskImage: "radial-gradient(ellipse at center, black 60%, transparent 100%)",
               WebkitMaskImage: "radial-gradient(ellipse at center, black 60%, transparent 100%)"
             }}
