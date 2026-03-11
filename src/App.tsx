@@ -7,7 +7,7 @@ import { FiltersPanel } from './components/editor/panels/FiltersPanel';
 import { CropPanel } from './components/editor/panels/CropPanel';
 import { OverlaysPanel } from './components/editor/panels/OverlaysPanel';
 import { ObjectPropertiesPanel } from './components/editor/panels/ObjectPropertiesPanel';
-import { AiPanel } from './components/editor/panels/AiPanel';
+import { AdditionalToolsPanel } from './components/editor/panels/AdditionalToolsPanel';
 import { useEditorStore } from './store/editorStore';
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
@@ -113,7 +113,7 @@ function App() {
                 <button 
                   onClick={() => setActiveTool('ai')}
                   className={`w-10 h-10 rounded-xl transition-colors flex items-center justify-center cursor-pointer ${activeTool === 'ai' ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]' : 'bg-white dark:bg-black text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-900 border border-slate-200 dark:border-white/10 hover:text-purple-400'}`}
-                  title="Local AI Tools"
+                  title="Additional Tools"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="m16.2 7.8 2.9-2.9"/><path d="M18 12h4"/><path d="m16.2 16.2 2.9 2.9"/><path d="M12 18v4"/><path d="m4.9 19.1 2.9-2.9"/><path d="M2 12h4"/><path d="m4.9 4.9 2.9 2.9"/></svg>
                 </button>
@@ -145,7 +145,7 @@ function App() {
                         {activeTool === 'filters' && <FiltersPanel />}
                         {activeTool === 'crop' && <CropPanel />}
                         {activeTool === 'overlays' && <OverlaysPanel />}
-                        {activeTool === 'ai' && <AiPanel />}
+                        {activeTool === 'ai' && <AdditionalToolsPanel />}
                       </>
                     )}
                 </div>

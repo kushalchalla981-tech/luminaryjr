@@ -63,6 +63,9 @@ interface EditorStore {
   setAdjustment: (key: keyof WebGLAdjustments, value: number) => void;
   resetAdjustments: () => void;
   
+  activeFilter: string | null;
+  setActiveFilter: (filterName: string | null) => void;
+
   setGeometry: (key: keyof GeometryState, value: any) => void;
   resetGeometry: () => void;
   
@@ -86,10 +89,18 @@ interface EditorStore {
   
   // Local AI
   pendingBgRemoval: boolean;
+  bgRemovalTarget: 'person' | 'background';
+  setBgRemovalTarget: (target: 'person' | 'background') => void;
+  bgRemovalOpacity: number;
+  setBgRemovalOpacity: (opacity: number) => void;
   triggerBgRemoval: () => void;
   clearBgRemoval: () => void;
   
   pendingBgBlur: boolean;
+  bgBlurTarget: 'person' | 'background';
+  setBgBlurTarget: (target: 'person' | 'background') => void;
+  bgBlurIntensity: number;
+  setBgBlurIntensity: (val: number) => void;
   triggerBgBlur: () => void;
   clearBgBlur: () => void;
   
@@ -97,13 +108,15 @@ interface EditorStore {
   isDrawingMode: boolean;
   setDrawingMode: (isDrawing: boolean) => void;
   brushColor: string;
+  brushType: 'pencil' | 'marker' | 'spray';
+  setBrushType: (type: 'pencil' | 'marker' | 'spray') => void;
   setBrushColor: (color: string) => void;
   brushWidth: number;
   setBrushWidth: (width: number) => void;
 }
 
 export const useEditorStore = create<EditorStore>((set) => ({
-  theme: 'dark',
+  theme: 'light',
   setTheme: (theme) => set({ theme }),
   activeTool: 'adjust', // Default tab
   adjustments: { ...defaultAdjustments },
@@ -122,6 +135,9 @@ export const useEditorStore = create<EditorStore>((set) => ({
     })),
   resetAdjustments: () => set({ adjustments: { ...defaultAdjustments } }),
   
+  activeFilter: null,
+  setActiveFilter: (filterName) => set({ activeFilter: filterName }),
+
   setGeometry: (key, value) => 
     set((state) => ({
       geometry: {
@@ -145,16 +161,26 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setSelectedObject: (id, type) => set({ selectedObjectId: id, selectedObjectType: type }),
   
   pendingBgRemoval: false,
+  bgRemovalTarget: 'person',
+  setBgRemovalTarget: (target) => set({ bgRemovalTarget: target }),
+  bgRemovalOpacity: 0,
+  setBgRemovalOpacity: (opacity) => set({ bgRemovalOpacity: opacity }),
   triggerBgRemoval: () => set({ pendingBgRemoval: true }),
   clearBgRemoval: () => set({ pendingBgRemoval: false }),
   
   pendingBgBlur: false,
+  bgBlurTarget: 'background',
+  setBgBlurTarget: (target) => set({ bgBlurTarget: target }),
+  bgBlurIntensity: 50,
+  setBgBlurIntensity: (val) => set({ bgBlurIntensity: val }),
   triggerBgBlur: () => set({ pendingBgBlur: true }),
   clearBgBlur: () => set({ pendingBgBlur: false }),
   
   isDrawingMode: false,
   setDrawingMode: (isDrawing) => set({ isDrawingMode: isDrawing }),
   brushColor: '#FFD700',
+  brushType: 'pencil',
+  setBrushType: (type) => set({ brushType: type }),
   setBrushColor: (color) => set({ brushColor: color }),
   brushWidth: 5,
   setBrushWidth: (width) => set({ brushWidth: width }),

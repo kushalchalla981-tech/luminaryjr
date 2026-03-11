@@ -62,7 +62,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-200">
       <div className="flex items-center justify-between mb-8">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-900 dark:text-white/90 uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white/90 uppercase tracking-wider flex items-center gap-2">
           {selectedObjectType === 'text' ? (
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
           ) : (
@@ -73,7 +73,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
         
         <button 
           onClick={handleDelete}
-          className="w-7 h-7 rounded bg-red-500/10 hover:bg-red-500 hover:text-slate-900 dark:text-slate-900 dark:text-white text-red-500 transition-colors flex items-center justify-center cursor-pointer"
+          className="w-7 h-7 rounded bg-red-500/10 hover:bg-red-500 hover:text-slate-900 dark:text-white text-red-500 transition-colors flex items-center justify-center cursor-pointer"
           title="Delete Object"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
@@ -84,7 +84,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
         
         {/* Color Picker */}
         <div className="flex flex-col gap-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-500 dark:text-slate-400">Color</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Color</span>
             <div className="flex items-center gap-3">
                 <input 
                     type="color" 
@@ -95,14 +95,14 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
                     }}
                     className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
                 />
-                <span className="text-sm font-mono text-slate-900 dark:text-slate-900 dark:text-white/80 uppercase">{fillColor}</span>
+                <span className="text-sm font-mono text-slate-900 dark:text-white/80 uppercase">{fillColor}</span>
             </div>
         </div>
 
         {/* Opacity Slider */}
         <div className="flex flex-col gap-3">
             <div className="flex justify-between items-end">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-500 dark:text-slate-400">Opacity</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Opacity</span>
                 <span className="text-xs font-mono text-slate-500 w-8 text-right bg-slate-100 dark:bg-white/5 rounded px-1 py-0.5">{opacity}%</span>
             </div>
             <input
@@ -123,7 +123,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
         {selectedObjectType === 'text' && (
             <>
                 <div className="flex flex-col gap-3">
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-500 dark:text-slate-400">Typography</span>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Typography</span>
                     
                     {/* Font Family */}
                     <select 
@@ -132,7 +132,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
                             setFontFamily(e.target.value);
                             updateObject({ fontFamily: e.target.value });
                         }}
-                        className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-900 dark:text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-yellow-500"
+                        className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-yellow-500"
                     >
                         <option value="system-ui, sans-serif">System Sans</option>
                         <option value="Georgia, serif">Georgia Serif</option>
@@ -144,7 +144,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
                 </div>
                 
                 <div className="flex flex-col gap-3">
-                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-500 dark:text-slate-400">Size Tracking</span>
+                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Size Tracking</span>
                      <input
                         type="range"
                         min={10}

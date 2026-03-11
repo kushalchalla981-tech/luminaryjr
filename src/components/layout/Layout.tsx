@@ -28,7 +28,7 @@ export function Layout({
   }, [theme]);
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-black text-slate-100 transition-colors duration-500">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100 transition-colors duration-500">
       
       <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
          <BackgroundPaths showContent={false} />
