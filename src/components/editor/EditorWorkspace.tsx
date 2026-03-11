@@ -29,6 +29,8 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
   
   const pendingCrop = useEditorStore((state) => state.pendingCrop);
   const clearCropTrigger = useEditorStore((state) => state.clearCropTrigger);
+  const setAdjustment = useEditorStore((state) => state.setAdjustment);
+  const setGeometry = useEditorStore((state) => state.setGeometry);
   
   const pendingText = useEditorStore((state) => state.pendingText);
   const clearAddText = useEditorStore((state) => state.clearAddText);
@@ -50,6 +52,53 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
 
   const [cropRect, setCropRect] = useState<fabric.Rect | null>(null);
   const [segmenter, setSegmenter] = useState<ImageSegmenter | null>(null);
+
+    const syncStoreWithImage = (image: fabric.Image) => {
+        // Extract filters (adjustments)
+
+        const currentAdjustments: any = {
+            brightness: 0, contrast: 0, saturation: 0, exposure: 0,
+            warmth: 0, tint: 0, highlights: 0, shadows: 0,
+            vibrance: 0, sharpness: 0, vignette: 0, blur: 0, noise: 0
+        };
+
+        const currentFilters = image.filters || [];
+
+        currentFilters.forEach(filter => {
+            if (!filter) return;
+            const type = filter.type;
+
+            if (type === 'Brightness') {
+                // Approximate conversion back from fabric's internal scaling (-1 to 1) to our (-100 to 100)
+                currentAdjustments.brightness = filter.brightness * 100;
+            } else if (type === 'Contrast') {
+                currentAdjustments.contrast = filter.contrast * 100;
+            } else if (type === 'Saturation') {
+                currentAdjustments.saturation = filter.saturation * 100;
+            } else if (type === 'Blur') {
+                currentAdjustments.blur = filter.blur * 100;
+            } else if (type === 'Noise') {
+                currentAdjustments.noise = (filter.noise / 100) * 100; // Fabric is 0-1000, we map 0-100 -> 0-1000
+            } else if (type === 'ColorMatrix') {
+                // Heuristic mapping for matrix filters (Warmth, Tint, etc)
+                // We'd need to store the matrix type in the filter somehow,
+                // but since fabric doesn't preserve custom properties easily across JSON load,
+                // we'll leave matrix-based ones at 0 for now. It's a complex edge case for undo/redo.
+            }
+        });
+
+        // Batch update adjustments
+
+        Object.keys(currentAdjustments).forEach(key => {
+            setAdjustment(key as any, currentAdjustments[key]);
+        });
+
+        // Extract geometry
+        setGeometry('rotation', image.angle || 0);
+        setGeometry('flipX', image.flipX || false);
+        setGeometry('flipY', image.flipY || false);
+    };
+
 
   // History State
   const [history, setHistory] = useState<string[]>([]);
@@ -349,6 +398,15 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
     // Apply the filters to the pixel data
     mainImage.applyFilters();
     fabricCanvas.requestRenderAll();
+
+    // Trigger history save after filter application if not currently undoing
+    if (!isHistoryAction.current) {
+       // Debounce saving history manually here to prevent 100 saves during a slider drag
+       if ((window as any)._historyTimeout) clearTimeout((window as any)._historyTimeout);
+       (window as any)._historyTimeout = setTimeout(() => {
+           fabricCanvas.fire('object:modified', { target: mainImage });
+       }, 500);
+    }
 
   }, [adjustments, mainImage, fabricCanvas]);
 
@@ -837,7 +895,11 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             fabricCanvas.requestRenderAll();
             // Re-find main image after load
             const objs = fabricCanvas.getObjects('image');
-            if (objs.length > 0) setMainImage(objs[0] as fabric.Image);
+            if (objs.length > 0) {
+                const img = objs[0] as fabric.Image;
+                setMainImage(img);
+                syncStoreWithImage(img);
+            }
             isHistoryAction.current = false;
         });
     },
@@ -852,7 +914,11 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             fabricCanvas.requestRenderAll();
             // Re-find main image after load
             const objs = fabricCanvas.getObjects('image');
-            if (objs.length > 0) setMainImage(objs[0] as fabric.Image);
+            if (objs.length > 0) {
+                const img = objs[0] as fabric.Image;
+                setMainImage(img);
+                syncStoreWithImage(img);
+            }
             isHistoryAction.current = false;
         });
     },
