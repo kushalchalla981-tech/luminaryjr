@@ -29,6 +29,8 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
   
   const pendingCrop = useEditorStore((state) => state.pendingCrop);
   const clearCropTrigger = useEditorStore((state) => state.clearCropTrigger);
+  const setAdjustment = useEditorStore((state) => state.setAdjustment);
+  const setGeometry = useEditorStore((state) => state.setGeometry);
   
   const pendingText = useEditorStore((state) => state.pendingText);
   const clearAddText = useEditorStore((state) => state.clearAddText);
@@ -39,17 +41,106 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
   const setSelectedObject = useEditorStore((state) => state.setSelectedObject);
 
   const pendingBgRemoval = useEditorStore((state) => state.pendingBgRemoval);
+  const bgRemovalTarget = useEditorStore((state) => state.bgRemovalTarget);
+  const bgRemovalOpacity = useEditorStore((state) => state.bgRemovalOpacity);
   const clearBgRemoval = useEditorStore((state) => state.clearBgRemoval);
   
   const pendingBgBlur = useEditorStore((state) => state.pendingBgBlur);
+  const bgBlurTarget = useEditorStore((state) => state.bgBlurTarget);
+  const bgBlurIntensity = useEditorStore((state) => state.bgBlurIntensity);
   const clearBgBlur = useEditorStore((state) => state.clearBgBlur);
   
   const isDrawingMode = useEditorStore((state) => state.isDrawingMode);
   const brushColor = useEditorStore((state) => state.brushColor);
   const brushWidth = useEditorStore((state) => state.brushWidth);
+  const brushType = useEditorStore((state) => state.brushType);
 
   const [cropRect, setCropRect] = useState<fabric.Rect | null>(null);
   const [segmenter, setSegmenter] = useState<ImageSegmenter | null>(null);
+
+    const syncStoreWithImage = (image: fabric.Image) => {
+        // Extract filters (adjustments)
+
+        const currentAdjustments: any = {
+            brightness: 0, contrast: 0, saturation: 0, exposure: 0,
+            warmth: 0, tint: 0, highlights: 0, shadows: 0,
+            vibrance: 0, sharpness: 0, vignette: 0, blur: 0, noise: 0
+        };
+
+        const currentFilters = image.filters || [];
+
+        currentFilters.forEach(filter => {
+            if (!filter) return;
+            const type = filter.type;
+
+            if (type === 'Brightness') {
+                // Approximate conversion back from fabric's internal scaling (-1 to 1) to our (-100 to 100)
+                currentAdjustments.brightness = filter.brightness * 100;
+            } else if (type === 'Contrast') {
+                currentAdjustments.contrast = filter.contrast * 100;
+            } else if (type === 'Saturation') {
+                currentAdjustments.saturation = filter.saturation * 100;
+            } else if (type === 'Blur') {
+                currentAdjustments.blur = filter.blur * 100;
+            } else if (type === 'Noise') {
+                currentAdjustments.noise = (filter.noise / 100) * 100; // Fabric is 0-1000, we map 0-100 -> 0-1000
+            } else if (type === 'ColorMatrix') {
+                const matrix = (filter as any).matrix;
+                if (!matrix) return;
+
+                // Compare the filter matrix to our known filter presets to guess what it is.
+                // We'll check specific indexes that define each effect.
+
+                // Warmth (increases red, decreases blue)
+                if (matrix[0] > 1 && matrix[10] < 1) {
+                    currentAdjustments.warmth = Math.round(((matrix[0] - 1) / 0.2) * 100);
+                }
+                // Tint (increases green/blue ratio)
+                else if (matrix[5] > 0 || matrix[1] > 0) {
+                     // Very rough heuristic for tint
+                     currentAdjustments.tint = matrix[5] > 0 ? 50 : -50;
+                }
+                // Exposure (scales RGB equally)
+                else if (matrix[0] > 1 && matrix[5] > 1 && matrix[10] > 1 && matrix[0] === matrix[5]) {
+                    currentAdjustments.exposure = Math.round(((matrix[0] - 1) / 0.5) * 100);
+                }
+            } else if (type === 'Convolute') {
+                const matrix = (filter as any).matrix;
+                if (matrix && matrix[0] === 0 && matrix[1] < 0) {
+                     // Sharpness matrix pattern: [0, -s, 0, -s, 1 + 4*s, -s, 0, -s, 0]
+                     const s = -matrix[1];
+                     currentAdjustments.sharpness = Math.round(s * 100);
+                }
+            }
+        });
+
+        // Check for vignette object on canvas
+        if (fabricCanvas) {
+            const vignetteObj = fabricCanvas.getObjects().find(o => o.name === 'vignette') as fabric.Rect;
+            if (vignetteObj && vignetteObj.fill instanceof fabric.Gradient) {
+                // Extract opacity/vignette from gradient color stops
+                const stop = vignetteObj.fill.colorStops?.find(s => s.offset === 1);
+                if (stop && stop.color) {
+                    const match = stop.color.match(/rgba\(0,\s*0,\s*0,\s*([\d.]+)\)/);
+                    if (match && match[1]) {
+                        currentAdjustments.vignette = parseFloat(match[1]) * 100;
+                    }
+                }
+            }
+        }
+
+        // Batch update adjustments
+
+        Object.keys(currentAdjustments).forEach(key => {
+            setAdjustment(key as any, currentAdjustments[key]);
+        });
+
+        // Extract geometry
+        setGeometry('rotation', image.angle || 0);
+        setGeometry('flipX', image.flipX || false);
+        setGeometry('flipY', image.flipY || false);
+    };
+
 
   // History State
   const [history, setHistory] = useState<string[]>([]);
@@ -86,6 +177,21 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
     }
   }, [fabricCanvas, saveHistory]);
 
+  useEffect(() => {
+    const handleClearOverlays = () => {
+      if (!fabricCanvas || !mainImage) return;
+      const objects = fabricCanvas.getObjects();
+      // Remove all objects except the main image and vignette
+      objects.forEach(obj => {
+        if (obj !== mainImage && obj.name !== 'vignette') {
+          fabricCanvas.remove(obj);
+        }
+      });
+      fabricCanvas.requestRenderAll();
+    };
+    window.addEventListener('clear-overlays', handleClearOverlays);
+    return () => window.removeEventListener('clear-overlays', handleClearOverlays);
+  }, [fabricCanvas, mainImage]);
   // Initialize MediaPipe AI Model on load
   useEffect(() => {
     const initModel = async () => {
@@ -346,9 +452,31 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
       }));
     }
     
+
+    // 10. Sharpness
+    if (adjustments.sharpness > 0) {
+      const s = adjustments.sharpness / 100; // 0 to 1
+      // Sharpen matrix (Convolute)
+      const matrix = [
+        0, -s, 0,
+        -s, 1 + 4*s, -s,
+        0, -s, 0
+      ];
+      mainImage.filters.push(new fabric.filters.Convolute({ matrix }));
+    }
+
     // Apply the filters to the pixel data
     mainImage.applyFilters();
     fabricCanvas.requestRenderAll();
+
+    // Trigger history save after filter application if not currently undoing
+    if (!isHistoryAction.current) {
+       // Debounce saving history manually here to prevent 100 saves during a slider drag
+       if ((window as any)._historyTimeout) clearTimeout((window as any)._historyTimeout);
+       (window as any)._historyTimeout = setTimeout(() => {
+           fabricCanvas.fire('object:modified', { target: mainImage });
+       }, 500);
+    }
 
   }, [adjustments, mainImage, fabricCanvas]);
 
@@ -372,21 +500,93 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
     fabricCanvas.requestRenderAll();
   }, [geometry, mainImage, fabricCanvas]);
 
+
+  // Manage Vignette Overlay
+  useEffect(() => {
+    if (!fabricCanvas || !mainImage) return;
+
+    let vignetteObj = fabricCanvas.getObjects().find(o => o.name === 'vignette');
+
+    if (adjustments.vignette > 0) {
+      if (!vignetteObj) {
+        // Create radial gradient
+        const radius = Math.max(mainImage.getScaledWidth(), mainImage.getScaledHeight()) / 2;
+        vignetteObj = new fabric.Rect({
+          left: mainImage.left,
+          top: mainImage.top,
+          width: mainImage.getScaledWidth(),
+          height: mainImage.getScaledHeight(),
+          originX: 'center',
+          originY: 'center',
+          fill: new fabric.Gradient({
+            type: 'radial',
+            coords: {
+              x1: mainImage.getScaledWidth() / 2,
+              y1: mainImage.getScaledHeight() / 2,
+              r1: radius * 0.4,
+              x2: mainImage.getScaledWidth() / 2,
+              y2: mainImage.getScaledHeight() / 2,
+              r2: radius
+            },
+            colorStops: [
+              { offset: 0, color: 'rgba(0,0,0,0)' },
+              { offset: 1, color: `rgba(0,0,0,${adjustments.vignette / 100})` }
+            ]
+          }),
+          selectable: false,
+          evented: false,
+          name: 'vignette'
+        });
+        fabricCanvas.add(vignetteObj);
+        // Keep vignette on top of image but below crops/overlays if possible
+        vignetteObj.bringToFront();
+      } else {
+        // Update existing vignette opacity/gradient
+        const radius = Math.max(mainImage.getScaledWidth(), mainImage.getScaledHeight()) / 2;
+        vignetteObj.set({
+          left: mainImage.left,
+          top: mainImage.top,
+          width: mainImage.getScaledWidth(),
+          height: mainImage.getScaledHeight(),
+          fill: new fabric.Gradient({
+            type: 'radial',
+            coords: {
+              x1: mainImage.getScaledWidth() / 2,
+              y1: mainImage.getScaledHeight() / 2,
+              r1: radius * 0.4,
+              x2: mainImage.getScaledWidth() / 2,
+              y2: mainImage.getScaledHeight() / 2,
+              r2: radius
+            },
+            colorStops: [
+              { offset: 0, color: 'rgba(0,0,0,0)' },
+              { offset: 1, color: `rgba(0,0,0,${adjustments.vignette / 100})` }
+            ]
+          })
+        });
+      }
+    } else if (vignetteObj) {
+      fabricCanvas.remove(vignetteObj);
+    }
+
+    fabricCanvas.requestRenderAll();
+  }, [adjustments.vignette, mainImage, fabricCanvas]);
+
   // Crop Box UI Overlay
   useEffect(() => {
     if (!fabricCanvas || !mainImage) return;
 
     if (activeTool === 'crop') {
       if (!cropRect) {
-        // Create an initial crop box taking up 50% of the image
+        // Create an initial crop box taking up 100% of the image
         const imgWidth = mainImage.getScaledWidth();
         const imgHeight = mainImage.getScaledHeight();
         
         const rect = new fabric.Rect({
-          left: mainImage.left! - (imgWidth / 4),
-          top: mainImage.top! - (imgHeight / 4),
-          width: imgWidth / 2,
-          height: imgHeight / 2,
+          left: mainImage.left! - (imgWidth / 2),
+          top: mainImage.top! - (imgHeight / 2),
+          width: imgWidth,
+          height: imgHeight,
           fill: 'rgba(0,0,0,0)',
           stroke: '#FFD700',
           strokeWidth: 2,
@@ -677,13 +877,13 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             const maskData = categoryMask.getAsFloat32Array();
 
             // The model outputs 1 for body, 0 for background. 
-            // We loop over all pixels and set Alpha = 0 where mask == 0
             for (let i = 0; i < maskData.length; i++) {
-                // maskData[i] is a float roughly around 0.0 (bg) to 1.0 (fg)
-                // Thresholding it
-                if (maskData[i] < 0.5) {
+                const isBackground = maskData[i] < 0.5;
+                const shouldRemove = bgRemovalTarget === 'background' ? isBackground : !isBackground;
+
+                if (shouldRemove) {
                     const pixelIndex = i * 4;
-                    imageData.data[pixelIndex + 3] = 0; // Set Alpha channel completely transparent
+                    imageData.data[pixelIndex + 3] = Math.round(bgRemovalOpacity * 2.55); // Set Alpha channel based on opacity
                 }
             }
             
@@ -706,7 +906,7 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         console.warn("Segmenter not loaded yet!");
         clearBgRemoval();
     }
-  }, [pendingBgRemoval, fabricCanvas, mainImage, segmenter, clearBgRemoval]);
+  }, [pendingBgRemoval, bgRemovalTarget, bgRemovalOpacity, fabricCanvas, mainImage, segmenter, clearBgRemoval]);
 
   // Execute Background Blur Action (Local AI via MediaPipe)
   useEffect(() => {
@@ -738,24 +938,29 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             
             originalCtx.drawImage(imgElement, 0, 0);
             
-            // Draw blurred image
-            blurredCtx.filter = 'blur(16px)';
-            blurredCtx.drawImage(imgElement, 0, 0);
-            
             const originalData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
-            const blurredData = blurredCtx.getImageData(0, 0, blurredCanvas.width, blurredCanvas.height);
             const maskData = categoryMask.getAsFloat32Array();
 
             // Mix based on mask
+            // target == 'background' means blur background, keep person clear
+            // target == 'person' means blur person, keep background clear
+            // Blur intensity determines blur radius
+            blurredCtx.filter = `blur(${Math.max(1, Math.min(bgBlurIntensity / 4, 32))}px)`;
+            blurredCtx.drawImage(imgElement, 0, 0);
+
+            const newBlurredData = blurredCtx.getImageData(0, 0, blurredCanvas.width, blurredCanvas.height);
+
             for (let i = 0; i < maskData.length; i++) {
                 // maskData[i] is approx 0 for background, 1 for person
-                // If background (mask < 0.5), use blurred pixel
-                if (maskData[i] < 0.5) {
+                const isBackground = maskData[i] < 0.5;
+                const shouldBlur = bgBlurTarget === 'background' ? isBackground : !isBackground;
+
+                if (shouldBlur) {
                     const pixelIndex = i * 4;
-                    originalData.data[pixelIndex] = blurredData.data[pixelIndex];
-                    originalData.data[pixelIndex + 1] = blurredData.data[pixelIndex + 1];
-                    originalData.data[pixelIndex + 2] = blurredData.data[pixelIndex + 2];
-                    originalData.data[pixelIndex + 3] = blurredData.data[pixelIndex + 3];
+                    originalData.data[pixelIndex] = newBlurredData.data[pixelIndex];
+                    originalData.data[pixelIndex + 1] = newBlurredData.data[pixelIndex + 1];
+                    originalData.data[pixelIndex + 2] = newBlurredData.data[pixelIndex + 2];
+                    originalData.data[pixelIndex + 3] = newBlurredData.data[pixelIndex + 3];
                 }
             }
             
@@ -775,7 +980,7 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         console.warn("Segmenter not loaded yet!");
         clearBgBlur();
     }
-  }, [pendingBgBlur, fabricCanvas, mainImage, segmenter, clearBgBlur]);
+  }, [pendingBgBlur, bgBlurTarget, bgBlurIntensity, fabricCanvas, mainImage, segmenter, clearBgBlur]);
 
   // Helper function to replace mainImage source safely
   const fabricInternalUpdateImageSrc = (img: fabric.Image, newSrc: string, canvas: fabric.Canvas, cleanup: () => void) => {
@@ -817,12 +1022,20 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
     fabricCanvas.isDrawingMode = isDrawingMode;
     
     if (isDrawingMode) {
-        const brush = new fabric.PencilBrush(fabricCanvas);
+        let brush;
+        if (brushType === 'spray') {
+            brush = new fabric.SprayBrush(fabricCanvas);
+        } else if (brushType === 'marker') {
+            brush = new fabric.CircleBrush(fabricCanvas);
+        } else {
+            brush = new fabric.PencilBrush(fabricCanvas);
+        }
+
         brush.color = brushColor;
         brush.width = brushWidth;
         fabricCanvas.freeDrawingBrush = brush;
     }
-  }, [isDrawingMode, brushColor, brushWidth, fabricCanvas]);
+  }, [isDrawingMode, brushColor, brushWidth, brushType, fabricCanvas]);
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
@@ -837,8 +1050,15 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             fabricCanvas.requestRenderAll();
             // Re-find main image after load
             const objs = fabricCanvas.getObjects('image');
-            if (objs.length > 0) setMainImage(objs[0] as fabric.Image);
-            isHistoryAction.current = false;
+            if (objs.length > 0) {
+                const img = objs[0] as fabric.Image;
+                setMainImage(img);
+                syncStoreWithImage(img);
+            }
+            // Delay unlocking to let React state flush
+            setTimeout(() => {
+                isHistoryAction.current = false;
+            }, 50);
         });
     },
     redo: () => {
@@ -852,8 +1072,15 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             fabricCanvas.requestRenderAll();
             // Re-find main image after load
             const objs = fabricCanvas.getObjects('image');
-            if (objs.length > 0) setMainImage(objs[0] as fabric.Image);
-            isHistoryAction.current = false;
+            if (objs.length > 0) {
+                const img = objs[0] as fabric.Image;
+                setMainImage(img);
+                syncStoreWithImage(img);
+            }
+            // Delay unlocking to let React state flush
+            setTimeout(() => {
+                isHistoryAction.current = false;
+            }, 50);
         });
     },
     zoomIn: () => {

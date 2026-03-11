@@ -59,7 +59,7 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
           
           <div 
             className={`relative flex h-[60vh] w-full flex-col items-center justify-center transition-all duration-500 ${
-              isDragging ? 'bg-white/5 rounded-[2rem]' : 'bg-transparent'
+              isDragging ? 'bg-white dark:bg-black/5 dark:bg-white/5 rounded-[2rem]' : 'bg-transparent'
             }`}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
@@ -70,19 +70,19 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 100, delay: 0.8 }}
-                className="mb-8 flex h-28 w-28 items-center justify-center rounded-full bg-black border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)] group relative"
+                className="mb-8 flex h-28 w-28 items-center justify-center rounded-full bg-white dark:bg-black border border-black/10 dark:border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)] group relative"
               >
                 {/* Give the icon container a subtle glowing effect to make it stand out since it's floating */}
                 <div className="absolute inset-0 rounded-full shadow-[0_0_20px_rgba(255,215,0,0.15)] pointer-events-none" />
                 <UploadCloud size={48} className="text-yellow-400 group-hover:scale-110 transition-transform duration-300" />
               </motion.div>
               
-              <h2 className="mb-4 text-4xl md:text-5xl font-bold tracking-tighter text-white">
+              <h2 className="mb-4 text-4xl md:text-5xl font-bold tracking-tighter text-slate-900 dark:text-white">
                 Luminary<span className="text-yellow-400">Jr</span>
               </h2>
-              <p className="mb-10 text-slate-400 max-w-md text-lg leading-relaxed">
+              <p className="mb-10 text-slate-500 dark:text-slate-400 max-w-md text-lg leading-relaxed">
                 Drag and drop your image here, or browse your files. 
-                All processing happens <span className="text-white font-medium italic">locally</span> on your device.
+                All processing happens <span className="text-slate-900 dark:text-white font-medium italic">locally</span> on your device.
               </p>
 
               <InteractiveButton
@@ -90,7 +90,7 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
                 className="group relative"
               >
                 <ImageIcon size={20} className="text-yellow-400 group-hover:rotate-12 transition-transform" />
-                <span className="text-lg font-semibold text-white tracking-wide">Browse Files</span>
+                <span className="text-lg font-semibold text-slate-900 dark:text-white tracking-wide">Browse Files</span>
                 <input 
                   id="file-upload"
                   type="file" 
