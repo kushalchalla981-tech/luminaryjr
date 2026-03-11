@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { ImageSegmenter, FilesetResolver } from '@mediapipe/tasks-vision';
 import { useEditorStore } from '../../store/editorStore';
@@ -10,6 +10,11 @@ interface EditorWorkspaceProps {
 export interface EditorWorkspaceRef {
   exportImage: () => void;
   getCanvas: () => fabric.Canvas | null;
+  undo: () => void;
+  redo: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  getZoom: () => number;
 }
 
 export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspaceProps>(({ imageUrl }, ref) => {
@@ -45,6 +50,41 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
 
   const [cropRect, setCropRect] = useState<fabric.Rect | null>(null);
   const [segmenter, setSegmenter] = useState<ImageSegmenter | null>(null);
+
+  // History State
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const isHistoryAction = useRef(false);
+
+  const saveHistory = useCallback(() => {
+    if (!fabricCanvas || isHistoryAction.current) return;
+
+    const json = JSON.stringify(fabricCanvas.toJSON());
+
+    setHistory(prev => {
+        const newHistory = prev.slice(0, historyIndex + 1);
+        newHistory.push(json);
+        // Keep last 20 states to prevent massive memory usage
+        if (newHistory.length > 20) newHistory.shift();
+        return newHistory;
+    });
+
+    setHistoryIndex(prev => {
+        return Math.min(prev + 1, 19); // max index 19
+    });
+  }, [fabricCanvas, historyIndex]);
+
+  // Hook into canvas modifications to save history
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const events = ['object:added', 'object:removed', 'object:modified'];
+    events.forEach(e => fabricCanvas.on(e, saveHistory));
+
+    return () => {
+        events.forEach(e => fabricCanvas.off(e, saveHistory));
+    }
+  }, [fabricCanvas, saveHistory]);
 
   // Initialize MediaPipe AI Model on load
   useEffect(() => {
@@ -113,6 +153,15 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
       
       setMainImage(img);
 
+      // Save initial state
+      setTimeout(() => {
+          if (!isHistoryAction.current) {
+              const json = JSON.stringify(canvas.toJSON());
+              setHistory([json]);
+              setHistoryIndex(0);
+          }
+      }, 100);
+
       // --- Selection Event Handling ---
       const handleSelection = (e: { selected?: fabric.Object[] }) => {
         const activeObj = e.selected?.[0];
@@ -174,6 +223,9 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), zoom);
         e.preventDefault();
         e.stopPropagation();
+
+        // Note: we might want to dispatch an event to update App.tsx zoomLevel state,
+        // but polling via the imperative handle is enough for button clicks.
       }
     });
 
@@ -336,11 +388,11 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
           width: imgWidth / 2,
           height: imgHeight / 2,
           fill: 'rgba(0,0,0,0)',
-          stroke: '#3b82f6',
+          stroke: '#FFD700',
           strokeWidth: 2,
           strokeDashArray: [5, 5],
-          borderColor: '#3b82f6',
-          cornerColor: '#3b82f6',
+          borderColor: '#FFD700',
+          cornerColor: '#FFD700',
           cornerSize: 12,
           transparentCorners: false,
           hasBorders: true,
@@ -353,7 +405,14 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
       } else {
         // Handle Aspect Ratio enforcement if picking from sidebar
         if (geometry.aspectRatio !== 'free') {
-           const ratio = geometry.aspectRatio as number;
+           let ratio = 1;
+           if (geometry.aspectRatio === 'original') {
+             // Calculate original ratio
+             ratio = mainImage.getScaledWidth() / mainImage.getScaledHeight();
+           } else {
+             ratio = geometry.aspectRatio as number;
+           }
+
            const currentW = cropRect.getScaledWidth();
            cropRect.set({ height: currentW / ratio });
            fabricCanvas.requestRenderAll();
@@ -402,26 +461,83 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
   // Execute Add Text Action
   useEffect(() => {
     if (pendingText && fabricCanvas && mainImage) {
+      const { text, type } = pendingText;
       
-      const textObj = new fabric.IText(pendingText, {
+      let textProps: fabric.ITextOptions = {
         left: mainImage.left!,
         top: mainImage.top!,
         originX: 'center',
         originY: 'center',
         fontFamily: 'system-ui, sans-serif',
-        fontSize: pendingText.includes('Title') ? 80 : 40,
-        fontWeight: pendingText.includes('Title') ? 'bold' : 'normal',
+        fontSize: 40,
         fill: '#ffffff',
-        shadow: new fabric.Shadow({
-          color: 'rgba(0,0,0,0.5)',
-          blur: 10,
-          offsetX: 2,
-          offsetY: 2
-        }),
         transparentCorners: false,
-        cornerColor: '#3b82f6',
+        cornerColor: '#FFD700',
         cornerSize: 12,
-      });
+      };
+
+      // Apply styles based on type
+      if (type === 'title') {
+        textProps.fontSize = 80;
+        textProps.fontWeight = 'bold';
+      } else if (type === 'subtitle') {
+        textProps.fontSize = 50;
+        textProps.fontWeight = '600';
+      } else if (type === 'caption' || type === 'date' || type === 'location') {
+        textProps.fontSize = 24;
+        textProps.fontWeight = '300';
+      } else if (type === 'neon') {
+        textProps.fill = '#f472b6'; // Pink
+        textProps.fontWeight = 'bold';
+        textProps.shadow = new fabric.Shadow({ color: '#f472b6', blur: 20, offsetX: 0, offsetY: 0 });
+      } else if (type === 'outline') {
+        textProps.fill = 'transparent';
+        textProps.stroke = '#ffffff';
+        textProps.strokeWidth = 2;
+        textProps.fontWeight = 'bold';
+        textProps.fontSize = 60;
+      } else if (type === 'shadow') {
+        textProps.fontWeight = 'bold';
+        textProps.shadow = new fabric.Shadow({ color: 'rgba(0,0,0,0.8)', blur: 5, offsetX: 5, offsetY: 5 });
+      } else if (type === 'textbox') {
+        textProps.backgroundColor = '#ffffff';
+        textProps.fill = '#000000';
+        textProps.padding = 10;
+        textProps.fontWeight = 'bold';
+      } else if (type === 'transparent-textbox') {
+        textProps.backgroundColor = 'rgba(0,0,0,0.5)';
+        textProps.padding = 10;
+      } else if (type === 'watermark') {
+        textProps.opacity = 0.3;
+        textProps.fontWeight = 'bold';
+        textProps.fontSize = 100;
+        textProps.angle = -45;
+      } else if (type === 'handwriting') {
+        textProps.fontFamily = 'cursive'; // Or a specific web font if loaded
+        textProps.fontStyle = 'italic';
+        textProps.fontSize = 60;
+      } else if (type === 'gradient') {
+        // Simple fallback for gradient text if gradient object fails
+        textProps.fontWeight = 'bold';
+        textProps.fontSize = 60;
+      } else if (type === 'sticker' || type === 'emoji') {
+         textProps.fontSize = 80;
+      }
+
+      const textObj = new fabric.IText(text, textProps);
+
+      // Apply proper gradient object if gradient type
+      if (type === 'gradient') {
+          const grad = new fabric.Gradient({
+             type: 'linear',
+             coords: { x1: 0, y1: 0, x2: textObj.width!, y2: 0 },
+             colorStops: [
+                 { offset: 0, color: '#c084fc' }, // purple-400
+                 { offset: 1, color: '#db2777' }  // pink-600
+             ]
+          });
+          textObj.set('fill', grad);
+      }
 
       fabricCanvas.add(textObj);
       fabricCanvas.setActiveObject(textObj);
@@ -440,10 +556,10 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         top: mainImage.top!,
         originX: 'center',
         originY: 'center',
-        fill: '#3b82f6', // Default brand blue
+        fill: '#FFD700', // Default brand blue
         transparentCorners: false,
         cornerColor: '#ffffff',
-        cornerStrokeColor: '#3b82f6',
+        cornerStrokeColor: '#FFD700',
         borderColor: '#ffffff',
         cornerSize: 12,
         shadow: new fabric.Shadow({
@@ -459,16 +575,27 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
 
       switch (pendingShape) {
         case 'rect':
-          shapeObj = new fabric.Rect({ ...commonProps, width: size, height: size, rx: 16, ry: 16 });
+          shapeObj = new fabric.Rect({ ...commonProps, width: size * 1.5, height: size });
+          break;
+        case 'square':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size, height: size });
+          break;
+        case 'rounded-rect':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size * 1.5, height: size, rx: 20, ry: 20 });
           break;
         case 'circle':
           shapeObj = new fabric.Circle({ ...commonProps, radius: size / 2 });
           break;
+        case 'oval':
+          shapeObj = new fabric.Ellipse({ ...commonProps, rx: size, ry: size / 2 });
+          break;
         case 'triangle':
           shapeObj = new fabric.Triangle({ ...commonProps, width: size, height: size });
           break;
+        case 'diamond':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size, height: size, angle: 45 });
+          break;
         case 'star':
-          // Approximating a star with a polygon for simplicity in standard fabric
           shapeObj = new fabric.Polygon([
             {x: 75, y: 0}, {x: 98, y: 46}, {x: 150, y: 53}, 
             {x: 112, y: 90}, {x: 121, y: 142}, {x: 75, y: 118}, 
@@ -481,6 +608,30 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             {x: 37.5, y: 0}, {x: 112.5, y: 0}, {x: 150, y: 65}, 
             {x: 112.5, y: 130}, {x: 37.5, y: 130}, {x: 0, y: 65}
           ], { ...commonProps });
+          break;
+        case 'line':
+          shapeObj = new fabric.Line([-size, 0, size, 0], { ...commonProps, fill: 'transparent', stroke: '#FFD700', strokeWidth: 10 });
+          break;
+        case 'dashed-line':
+          shapeObj = new fabric.Line([-size, 0, size, 0], { ...commonProps, fill: 'transparent', stroke: '#FFD700', strokeWidth: 10, strokeDashArray: [20, 10] });
+          break;
+        case 'arrow':
+          shapeObj = new fabric.Path('M 0 0 L 100 0 M 100 0 L 80 -20 M 100 0 L 80 20', { ...commonProps, fill: 'transparent', stroke: '#FFD700', strokeWidth: 10 });
+          break;
+        case 'double-arrow':
+          shapeObj = new fabric.Path('M 0 0 L 100 0 M 100 0 L 80 -20 M 100 0 L 80 20 M 0 0 L 20 -20 M 0 0 L 20 20', { ...commonProps, fill: 'transparent', stroke: '#FFD700', strokeWidth: 10 });
+          break;
+        case 'frame':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size * 1.5, height: size * 1.5, fill: 'transparent', stroke: '#ffffff', strokeWidth: 15 });
+          break;
+        case 'highlight':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size * 2, height: size / 2, fill: 'rgba(250, 204, 21, 0.5)', shadow: undefined });
+          break;
+        case 'heart':
+          shapeObj = new fabric.Path('M 272.70141,238.71731 C 206.46141,238.71731 152.70146,292.4773 152.70146,358.71731 C 152.70146,493.47282 288.63461,528.80451 381.26391,662.02535 C 468.83815,529.62199 609.82641,489.17075 609.82641,358.71731 C 609.82641,292.47731 556.06651,238.7173 489.82641,238.71731 C 441.77851,238.71731 400.42481,267.08774 381.26391,307.90481 C 362.10311,267.08773 320.74931,238.7173 272.70141,238.71731 z ', { ...commonProps, scaleX: 0.3, scaleY: 0.3 });
+          break;
+        case 'callout':
+          shapeObj = new fabric.Path('M 0 0 L 100 0 L 100 80 L 60 80 L 40 120 L 40 80 L 0 80 Z', { ...commonProps });
           break;
       }
 
@@ -675,6 +826,51 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
+    undo: () => {
+        if (!fabricCanvas || historyIndex <= 0) return;
+
+        isHistoryAction.current = true;
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+
+        fabricCanvas.loadFromJSON(history[newIndex], () => {
+            fabricCanvas.requestRenderAll();
+            // Re-find main image after load
+            const objs = fabricCanvas.getObjects('image');
+            if (objs.length > 0) setMainImage(objs[0] as fabric.Image);
+            isHistoryAction.current = false;
+        });
+    },
+    redo: () => {
+        if (!fabricCanvas || historyIndex >= history.length - 1) return;
+
+        isHistoryAction.current = true;
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+
+        fabricCanvas.loadFromJSON(history[newIndex], () => {
+            fabricCanvas.requestRenderAll();
+            // Re-find main image after load
+            const objs = fabricCanvas.getObjects('image');
+            if (objs.length > 0) setMainImage(objs[0] as fabric.Image);
+            isHistoryAction.current = false;
+        });
+    },
+    zoomIn: () => {
+        if (!fabricCanvas) return;
+        let zoom = fabricCanvas.getZoom() * 1.1;
+        if (zoom > 20) zoom = 20;
+        fabricCanvas.zoomToPoint(new fabric.Point(fabricCanvas.width! / 2, fabricCanvas.height! / 2), zoom);
+    },
+    zoomOut: () => {
+        if (!fabricCanvas) return;
+        let zoom = fabricCanvas.getZoom() / 1.1;
+        if (zoom < 0.05) zoom = 0.05;
+        fabricCanvas.zoomToPoint(new fabric.Point(fabricCanvas.width! / 2, fabricCanvas.height! / 2), zoom);
+    },
+    getZoom: () => {
+        return fabricCanvas ? Math.round(fabricCanvas.getZoom() * 100) : 100;
+    },
     exportImage: () => {
       if (!fabricCanvas) return;
       

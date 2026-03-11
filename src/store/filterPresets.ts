@@ -7,8 +7,9 @@ export interface FilterPreset {
 
 export const filterCategories = [
     {
-        name: "Apple Core",
+        name: "Filters",
         filters: [
+            // Apple Core
             { name: "Original", adjustments: {} },
             { name: "Vivid", adjustments: { contrast: 15, saturation: 25, brightness: 5, vibrance: 10 } },
             { name: "Vivid Warm", adjustments: { contrast: 15, saturation: 25, brightness: 5, warmth: 30 } },
@@ -19,11 +20,7 @@ export const filterCategories = [
             { name: "Mono", adjustments: { saturation: -100, contrast: 10 } },
             { name: "Silvertone", adjustments: { saturation: -100, contrast: 20, highlights: 15, shadows: -10 } },
             { name: "Noir", adjustments: { saturation: -100, contrast: 50, vignette: 30, exposure: -5 } },
-        ]
-    },
-    {
-        name: "Enhance",
-        filters: [
+            // Enhance
             { name: "Auto", adjustments: { exposure: 5, contrast: 10, vibrance: 15, sharpness: 10 } },
             { name: "Enhance", adjustments: { brightness: 10, saturation: 15, contrast: 15 } },
             { name: "Warm", adjustments: { warmth: 40, tint: 5 } },
@@ -34,11 +31,7 @@ export const filterCategories = [
             { name: "Color Pop", adjustments: { vibrance: 40, saturation: 20, contrast: 10 } },
             { name: "Black and White", adjustments: { saturation: -100 } },
             { name: "Sepia", adjustments: { saturation: -80, warmth: 80, tint: 20 } },
-        ]
-    },
-    {
-        name: "Instagram Classic",
-        filters: [
+            // Instagram Classic
             { name: "Clarendon", adjustments: { brightness: 10, contrast: 20, saturation: 15, warmth: -10, tint: 10 } },
             { name: "Gingham", adjustments: { brightness: 5, contrast: -10, saturation: -15, warmth: 10 } },
             { name: "Juno", adjustments: { contrast: 15, saturation: 20, warmth: 20, tint: 10, vignette: 10 } },
@@ -76,11 +69,7 @@ export const filterCategories = [
             { name: "Ashby", adjustments: { contrast: 5, warmth: 15, saturation: -5 } },
             { name: "Stinson", adjustments: { contrast: -15, exposure: 10, warmth: 5 } },
             { name: "Skyline", adjustments: { contrast: 15, exposure: 15, vibrance: 10 } },
-        ]
-    },
-    {
-        name: "Cinematic & Film",
-        filters: [
+            // Cinematic & Film
             { name: "Haunt", adjustments: { contrast: 30, saturation: -30, warmth: -10, tint: -10 } },
             { name: "Cosmos", adjustments: { contrast: 20, vibrance: 40, warmth: -20 } },
             { name: "Pure", adjustments: { exposure: 10, contrast: 10, saturation: -10 } },

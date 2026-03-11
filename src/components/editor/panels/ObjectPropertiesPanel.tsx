@@ -115,7 +115,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
                     setOpacity(val);
                     updateObject({ opacity: val / 100 });
                 }}
-                className="w-full h-1.5 appearance-none rounded-full bg-white/10 cursor-pointer accent-blue-500 focus:outline-none"
+                className="w-full h-1.5 appearance-none rounded-full bg-white/10 cursor-pointer accent-yellow-500 focus:outline-none"
             />
         </div>
 
@@ -132,7 +132,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
                             setFontFamily(e.target.value);
                             updateObject({ fontFamily: e.target.value });
                         }}
-                        className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                        className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-yellow-500"
                     >
                         <option value="system-ui, sans-serif">System Sans</option>
                         <option value="Georgia, serif">Georgia Serif</option>
@@ -155,7 +155,7 @@ export function ObjectPropertiesPanel({ canvas }: ObjectPropertiesPanelProps) {
                             setFontSize(val);
                             updateObject({ fontSize: val });
                         }}
-                        className="w-full h-1.5 appearance-none rounded-full bg-white/10 cursor-pointer accent-blue-500 focus:outline-none"
+                        className="w-full h-1.5 appearance-none rounded-full bg-white/10 cursor-pointer accent-yellow-500 focus:outline-none"
                     />
                 </div>
             </>

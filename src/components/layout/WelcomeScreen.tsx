@@ -43,12 +43,9 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
   }, [onImageSelect]);
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <BackgroundPaths showContent={false} />
-      </div>
+    <div className="relative h-full w-full flex items-center justify-center overflow-hidden">
 
-      {/* Glassmorphism Upload Area */}
+      {/* Floating Upload Area */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -56,21 +53,13 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
         className="relative z-10 w-full max-w-4xl"
       >
         <div className={cn(
-          "relative h-full w-full rounded-[2.5rem] border-[0.75px] border-white/10 p-2 transition-all duration-500",
+          "relative h-full w-full transition-all duration-500",
           isDragging ? "scale-[1.02]" : "scale-100"
         )}>
-          <GlowingEffect
-            spread={40}
-            glow={true}
-            disabled={false}
-            proximity={64}
-            inactiveZone={0.01}
-            borderWidth={3}
-          />
           
           <div 
-            className={`relative flex h-[60vh] w-full flex-col items-center justify-center rounded-[2rem] border border-white/5 backdrop-blur-3xl transition-all duration-500 overflow-hidden ${
-              isDragging ? 'bg-white/15 shadow-[0_0_80px_rgba(59,130,246,0.15)]' : 'bg-white/5 shadow-2xl'
+            className={`relative flex h-[60vh] w-full flex-col items-center justify-center transition-all duration-500 ${
+              isDragging ? 'bg-white/5 rounded-[2rem]' : 'bg-transparent'
             }`}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
@@ -81,13 +70,15 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 100, delay: 0.8 }}
-                className="mb-8 flex h-28 w-28 items-center justify-center rounded-full bg-white/5 border border-white/10 shadow-inner group"
+                className="mb-8 flex h-28 w-28 items-center justify-center rounded-full bg-black border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)] group relative"
               >
-                <UploadCloud size={48} className="text-blue-400 group-hover:scale-110 transition-transform duration-300" />
+                {/* Give the icon container a subtle glowing effect to make it stand out since it's floating */}
+                <div className="absolute inset-0 rounded-full shadow-[0_0_20px_rgba(255,215,0,0.15)] pointer-events-none" />
+                <UploadCloud size={48} className="text-yellow-400 group-hover:scale-110 transition-transform duration-300" />
               </motion.div>
               
               <h2 className="mb-4 text-4xl md:text-5xl font-bold tracking-tighter text-white">
-                Luminary<span className="text-blue-400">Jr</span>
+                Luminary<span className="text-yellow-400">Jr</span>
               </h2>
               <p className="mb-10 text-slate-400 max-w-md text-lg leading-relaxed">
                 Drag and drop your image here, or browse your files. 
@@ -98,7 +89,7 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
                 onClick={() => document.getElementById('file-upload')?.click()}
                 className="group relative"
               >
-                <ImageIcon size={20} className="text-blue-400 group-hover:rotate-12 transition-transform" />
+                <ImageIcon size={20} className="text-yellow-400 group-hover:rotate-12 transition-transform" />
                 <span className="text-lg font-semibold text-white tracking-wide">Browse Files</span>
                 <input 
                   id="file-upload"
@@ -117,7 +108,7 @@ export function WelcomeScreen({ onImageSelect }: WelcomeScreenProps) {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="absolute inset-6 rounded-2xl border-2 border-dashed border-blue-500/50 pointer-events-none z-20" 
+            className="absolute inset-6 rounded-2xl border-2 border-dashed border-yellow-500/50 pointer-events-none z-20"
           />
         )}
       </motion.div>
