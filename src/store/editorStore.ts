@@ -53,6 +53,8 @@ const defaultGeometry: GeometryState = {
 };
 
 interface EditorStore {
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
   activeTool: 'adjust' | 'filters' | 'crop' | 'overlays' | 'ai';
   adjustments: WebGLAdjustments;
   geometry: GeometryState;
@@ -101,6 +103,8 @@ interface EditorStore {
 }
 
 export const useEditorStore = create<EditorStore>((set) => ({
+  theme: 'dark',
+  setTheme: (theme) => set({ theme }),
   activeTool: 'adjust', // Default tab
   adjustments: { ...defaultAdjustments },
   geometry: { ...defaultGeometry },

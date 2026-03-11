@@ -33,7 +33,7 @@ export function AiPanel() {
         
         {/* Background Removal */}
         <div className="flex flex-col gap-3">
-            <span className="text-xs font-semibold text-slate-400">Magic Cutout</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Magic Cutout</span>
             
             <div className="bg-purple-500/10 border-purple-500/20 border rounded-xl p-4 flex flex-col gap-4">
                 <p className="text-xs text-purple-200/80 leading-relaxed">
@@ -45,13 +45,13 @@ export function AiPanel() {
                   disabled={isProcessingRemoval || isProcessingBlur}
                   className={`w-full py-2.5 rounded font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
                     isProcessingRemoval 
-                        ? 'bg-purple-600/50 text-white/50 cursor-not-allowed' 
-                        : 'bg-purple-600 hover:bg-purple-500 text-white shadow-[0_4px_15px_rgba(168,85,247,0.3)]'
+                        ? 'bg-purple-600/50 text-slate-900 dark:text-white/50 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-500 text-slate-900 dark:text-white shadow-[0_4px_15px_rgba(168,85,247,0.3)]'
                   }`}
                 >
                     {isProcessingRemoval ? (
                         <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-slate-900 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
@@ -69,7 +69,7 @@ export function AiPanel() {
 
         {/* Portrait Blur */}
         <div className="flex flex-col gap-3">
-            <span className="text-xs font-semibold text-slate-400">Portrait Blur</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Portrait Blur</span>
             
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex flex-col gap-4">
                 <p className="text-xs text-yellow-200/80 leading-relaxed">
@@ -80,13 +80,13 @@ export function AiPanel() {
                   disabled={isProcessingRemoval || isProcessingBlur}
                   className={`w-full py-2.5 rounded font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
                     isProcessingBlur 
-                        ? 'bg-yellow-600/50 text-white/50 cursor-not-allowed'
-                        : 'bg-yellow-600 hover:bg-yellow-500 text-white shadow-[0_4px_15px_rgba(255,215,0,0.3)]'
+                        ? 'bg-yellow-600/50 text-slate-900 dark:text-white/50 cursor-not-allowed'
+                        : 'bg-yellow-600 hover:bg-yellow-500 text-slate-900 dark:text-white shadow-[0_4px_15px_rgba(255,215,0,0.3)]'
                   }`}
                 >
                     {isProcessingBlur ? (
                         <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-slate-900 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
