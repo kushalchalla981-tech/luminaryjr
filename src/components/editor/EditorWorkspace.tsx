@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { ImageSegmenter, FilesetResolver } from '@mediapipe/tasks-vision';
 import { useEditorStore } from '../../store/editorStore';
@@ -10,6 +10,11 @@ interface EditorWorkspaceProps {
 export interface EditorWorkspaceRef {
   exportImage: () => void;
   getCanvas: () => fabric.Canvas | null;
+  undo: () => void;
+  redo: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  getZoom: () => number;
 }
 
 export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspaceProps>(({ imageUrl }, ref) => {
@@ -24,6 +29,8 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
   
   const pendingCrop = useEditorStore((state) => state.pendingCrop);
   const clearCropTrigger = useEditorStore((state) => state.clearCropTrigger);
+  const setAdjustment = useEditorStore((state) => state.setAdjustment);
+  const setGeometry = useEditorStore((state) => state.setGeometry);
   
   const pendingText = useEditorStore((state) => state.pendingText);
   const clearAddText = useEditorStore((state) => state.clearAddText);
@@ -34,18 +41,157 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
   const setSelectedObject = useEditorStore((state) => state.setSelectedObject);
 
   const pendingBgRemoval = useEditorStore((state) => state.pendingBgRemoval);
+  const bgRemovalTarget = useEditorStore((state) => state.bgRemovalTarget);
+  const bgRemovalOpacity = useEditorStore((state) => state.bgRemovalOpacity);
   const clearBgRemoval = useEditorStore((state) => state.clearBgRemoval);
   
   const pendingBgBlur = useEditorStore((state) => state.pendingBgBlur);
+  const bgBlurTarget = useEditorStore((state) => state.bgBlurTarget);
+  const bgBlurIntensity = useEditorStore((state) => state.bgBlurIntensity);
   const clearBgBlur = useEditorStore((state) => state.clearBgBlur);
   
   const isDrawingMode = useEditorStore((state) => state.isDrawingMode);
   const brushColor = useEditorStore((state) => state.brushColor);
   const brushWidth = useEditorStore((state) => state.brushWidth);
+  const brushType = useEditorStore((state) => state.brushType);
 
   const [cropRect, setCropRect] = useState<fabric.Rect | null>(null);
   const [segmenter, setSegmenter] = useState<ImageSegmenter | null>(null);
 
+    const syncStoreWithImage = (image: fabric.Image) => {
+        // Extract filters (adjustments)
+
+        const currentAdjustments: any = {
+            brightness: 0, contrast: 0, saturation: 0, exposure: 0,
+            warmth: 0, tint: 0, highlights: 0, shadows: 0,
+            vibrance: 0, sharpness: 0, vignette: 0, blur: 0, noise: 0
+        };
+
+        const currentFilters = image.filters || [];
+
+        currentFilters.forEach(filter => {
+            if (!filter) return;
+            const type = filter.type;
+
+            if (type === 'Brightness') {
+                // Approximate conversion back from fabric's internal scaling (-1 to 1) to our (-100 to 100)
+                currentAdjustments.brightness = filter.brightness * 100;
+            } else if (type === 'Contrast') {
+                currentAdjustments.contrast = filter.contrast * 100;
+            } else if (type === 'Saturation') {
+                currentAdjustments.saturation = filter.saturation * 100;
+            } else if (type === 'Blur') {
+                currentAdjustments.blur = filter.blur * 100;
+            } else if (type === 'Noise') {
+                currentAdjustments.noise = (filter.noise / 100) * 100; // Fabric is 0-1000, we map 0-100 -> 0-1000
+            } else if (type === 'ColorMatrix') {
+                const matrix = (filter as any).matrix;
+                if (!matrix) return;
+
+                // Compare the filter matrix to our known filter presets to guess what it is.
+                // We'll check specific indexes that define each effect.
+
+                // Warmth (increases red, decreases blue)
+                if (matrix[0] > 1 && matrix[10] < 1) {
+                    currentAdjustments.warmth = Math.round(((matrix[0] - 1) / 0.2) * 100);
+                }
+                // Tint (increases green/blue ratio)
+                else if (matrix[5] > 0 || matrix[1] > 0) {
+                     // Very rough heuristic for tint
+                     currentAdjustments.tint = matrix[5] > 0 ? 50 : -50;
+                }
+                // Exposure (scales RGB equally)
+                else if (matrix[0] > 1 && matrix[5] > 1 && matrix[10] > 1 && matrix[0] === matrix[5]) {
+                    currentAdjustments.exposure = Math.round(((matrix[0] - 1) / 0.5) * 100);
+                }
+            } else if (type === 'Convolute') {
+                const matrix = (filter as any).matrix;
+                if (matrix && matrix[0] === 0 && matrix[1] < 0) {
+                     // Sharpness matrix pattern: [0, -s, 0, -s, 1 + 4*s, -s, 0, -s, 0]
+                     const s = -matrix[1];
+                     currentAdjustments.sharpness = Math.round(s * 100);
+                }
+            }
+        });
+
+        // Check for vignette object on canvas
+        if (fabricCanvas) {
+            const vignetteObj = fabricCanvas.getObjects().find(o => o.name === 'vignette') as fabric.Rect;
+            if (vignetteObj && vignetteObj.fill instanceof fabric.Gradient) {
+                // Extract opacity/vignette from gradient color stops
+                const stop = vignetteObj.fill.colorStops?.find(s => s.offset === 1);
+                if (stop && stop.color) {
+                    const match = stop.color.match(/rgba\(0,\s*0,\s*0,\s*([\d.]+)\)/);
+                    if (match && match[1]) {
+                        currentAdjustments.vignette = parseFloat(match[1]) * 100;
+                    }
+                }
+            }
+        }
+
+        // Batch update adjustments
+
+        Object.keys(currentAdjustments).forEach(key => {
+            setAdjustment(key as any, currentAdjustments[key]);
+        });
+
+        // Extract geometry
+        setGeometry('rotation', image.angle || 0);
+        setGeometry('flipX', image.flipX || false);
+        setGeometry('flipY', image.flipY || false);
+    };
+
+
+  // History State
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const isHistoryAction = useRef(false);
+
+  const saveHistory = useCallback(() => {
+    if (!fabricCanvas || isHistoryAction.current) return;
+
+    const json = JSON.stringify(fabricCanvas.toJSON());
+
+    setHistory(prev => {
+        const newHistory = prev.slice(0, historyIndex + 1);
+        newHistory.push(json);
+        // Keep last 20 states to prevent massive memory usage
+        if (newHistory.length > 20) newHistory.shift();
+        return newHistory;
+    });
+
+    setHistoryIndex(prev => {
+        return Math.min(prev + 1, 19); // max index 19
+    });
+  }, [fabricCanvas, historyIndex]);
+
+  // Hook into canvas modifications to save history
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const events = ['object:added', 'object:removed', 'object:modified'];
+    events.forEach(e => fabricCanvas.on(e, saveHistory));
+
+    return () => {
+        events.forEach(e => fabricCanvas.off(e, saveHistory));
+    }
+  }, [fabricCanvas, saveHistory]);
+
+  useEffect(() => {
+    const handleClearOverlays = () => {
+      if (!fabricCanvas || !mainImage) return;
+      const objects = fabricCanvas.getObjects();
+      // Remove all objects except the main image and vignette
+      objects.forEach(obj => {
+        if (obj !== mainImage && obj.name !== 'vignette') {
+          fabricCanvas.remove(obj);
+        }
+      });
+      fabricCanvas.requestRenderAll();
+    };
+    window.addEventListener('clear-overlays', handleClearOverlays);
+    return () => window.removeEventListener('clear-overlays', handleClearOverlays);
+  }, [fabricCanvas, mainImage]);
   // Initialize MediaPipe AI Model on load
   useEffect(() => {
     const initModel = async () => {
@@ -113,6 +259,15 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
       
       setMainImage(img);
 
+      // Save initial state
+      setTimeout(() => {
+          if (!isHistoryAction.current) {
+              const json = JSON.stringify(canvas.toJSON());
+              setHistory([json]);
+              setHistoryIndex(0);
+          }
+      }, 100);
+
       // --- Selection Event Handling ---
       const handleSelection = (e: { selected?: fabric.Object[] }) => {
         const activeObj = e.selected?.[0];
@@ -174,6 +329,9 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), zoom);
         e.preventDefault();
         e.stopPropagation();
+
+        // Note: we might want to dispatch an event to update App.tsx zoomLevel state,
+        // but polling via the imperative handle is enough for button clicks.
       }
     });
 
@@ -294,9 +452,31 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
       }));
     }
     
+
+    // 10. Sharpness
+    if (adjustments.sharpness > 0) {
+      const s = adjustments.sharpness / 100; // 0 to 1
+      // Sharpen matrix (Convolute)
+      const matrix = [
+        0, -s, 0,
+        -s, 1 + 4*s, -s,
+        0, -s, 0
+      ];
+      mainImage.filters.push(new fabric.filters.Convolute({ matrix }));
+    }
+
     // Apply the filters to the pixel data
     mainImage.applyFilters();
     fabricCanvas.requestRenderAll();
+
+    // Trigger history save after filter application if not currently undoing
+    if (!isHistoryAction.current) {
+       // Debounce saving history manually here to prevent 100 saves during a slider drag
+       if ((window as any)._historyTimeout) clearTimeout((window as any)._historyTimeout);
+       (window as any)._historyTimeout = setTimeout(() => {
+           fabricCanvas.fire('object:modified', { target: mainImage });
+       }, 500);
+    }
 
   }, [adjustments, mainImage, fabricCanvas]);
 
@@ -320,27 +500,99 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
     fabricCanvas.requestRenderAll();
   }, [geometry, mainImage, fabricCanvas]);
 
+
+  // Manage Vignette Overlay
+  useEffect(() => {
+    if (!fabricCanvas || !mainImage) return;
+
+    let vignetteObj = fabricCanvas.getObjects().find(o => o.name === 'vignette');
+
+    if (adjustments.vignette > 0) {
+      if (!vignetteObj) {
+        // Create radial gradient
+        const radius = Math.max(mainImage.getScaledWidth(), mainImage.getScaledHeight()) / 2;
+        vignetteObj = new fabric.Rect({
+          left: mainImage.left,
+          top: mainImage.top,
+          width: mainImage.getScaledWidth(),
+          height: mainImage.getScaledHeight(),
+          originX: 'center',
+          originY: 'center',
+          fill: new fabric.Gradient({
+            type: 'radial',
+            coords: {
+              x1: mainImage.getScaledWidth() / 2,
+              y1: mainImage.getScaledHeight() / 2,
+              r1: radius * 0.4,
+              x2: mainImage.getScaledWidth() / 2,
+              y2: mainImage.getScaledHeight() / 2,
+              r2: radius
+            },
+            colorStops: [
+              { offset: 0, color: 'rgba(0,0,0,0)' },
+              { offset: 1, color: `rgba(0,0,0,${adjustments.vignette / 100})` }
+            ]
+          }),
+          selectable: false,
+          evented: false,
+          name: 'vignette'
+        });
+        fabricCanvas.add(vignetteObj);
+        // Keep vignette on top of image but below crops/overlays if possible
+        vignetteObj.bringToFront();
+      } else {
+        // Update existing vignette opacity/gradient
+        const radius = Math.max(mainImage.getScaledWidth(), mainImage.getScaledHeight()) / 2;
+        vignetteObj.set({
+          left: mainImage.left,
+          top: mainImage.top,
+          width: mainImage.getScaledWidth(),
+          height: mainImage.getScaledHeight(),
+          fill: new fabric.Gradient({
+            type: 'radial',
+            coords: {
+              x1: mainImage.getScaledWidth() / 2,
+              y1: mainImage.getScaledHeight() / 2,
+              r1: radius * 0.4,
+              x2: mainImage.getScaledWidth() / 2,
+              y2: mainImage.getScaledHeight() / 2,
+              r2: radius
+            },
+            colorStops: [
+              { offset: 0, color: 'rgba(0,0,0,0)' },
+              { offset: 1, color: `rgba(0,0,0,${adjustments.vignette / 100})` }
+            ]
+          })
+        });
+      }
+    } else if (vignetteObj) {
+      fabricCanvas.remove(vignetteObj);
+    }
+
+    fabricCanvas.requestRenderAll();
+  }, [adjustments.vignette, mainImage, fabricCanvas]);
+
   // Crop Box UI Overlay
   useEffect(() => {
     if (!fabricCanvas || !mainImage) return;
 
     if (activeTool === 'crop') {
       if (!cropRect) {
-        // Create an initial crop box taking up 50% of the image
+        // Create an initial crop box taking up 100% of the image
         const imgWidth = mainImage.getScaledWidth();
         const imgHeight = mainImage.getScaledHeight();
         
         const rect = new fabric.Rect({
-          left: mainImage.left! - (imgWidth / 4),
-          top: mainImage.top! - (imgHeight / 4),
-          width: imgWidth / 2,
-          height: imgHeight / 2,
+          left: mainImage.left! - (imgWidth / 2),
+          top: mainImage.top! - (imgHeight / 2),
+          width: imgWidth,
+          height: imgHeight,
           fill: 'rgba(0,0,0,0)',
-          stroke: '#3b82f6',
+          stroke: '#FFD700',
           strokeWidth: 2,
           strokeDashArray: [5, 5],
-          borderColor: '#3b82f6',
-          cornerColor: '#3b82f6',
+          borderColor: '#FFD700',
+          cornerColor: '#FFD700',
           cornerSize: 12,
           transparentCorners: false,
           hasBorders: true,
@@ -353,7 +605,14 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
       } else {
         // Handle Aspect Ratio enforcement if picking from sidebar
         if (geometry.aspectRatio !== 'free') {
-           const ratio = geometry.aspectRatio as number;
+           let ratio = 1;
+           if (geometry.aspectRatio === 'original') {
+             // Calculate original ratio
+             ratio = mainImage.getScaledWidth() / mainImage.getScaledHeight();
+           } else {
+             ratio = geometry.aspectRatio as number;
+           }
+
            const currentW = cropRect.getScaledWidth();
            cropRect.set({ height: currentW / ratio });
            fabricCanvas.requestRenderAll();
@@ -402,26 +661,83 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
   // Execute Add Text Action
   useEffect(() => {
     if (pendingText && fabricCanvas && mainImage) {
+      const { text, type } = pendingText;
       
-      const textObj = new fabric.IText(pendingText, {
+      let textProps: fabric.ITextOptions = {
         left: mainImage.left!,
         top: mainImage.top!,
         originX: 'center',
         originY: 'center',
         fontFamily: 'system-ui, sans-serif',
-        fontSize: pendingText.includes('Title') ? 80 : 40,
-        fontWeight: pendingText.includes('Title') ? 'bold' : 'normal',
+        fontSize: 40,
         fill: '#ffffff',
-        shadow: new fabric.Shadow({
-          color: 'rgba(0,0,0,0.5)',
-          blur: 10,
-          offsetX: 2,
-          offsetY: 2
-        }),
         transparentCorners: false,
-        cornerColor: '#3b82f6',
+        cornerColor: '#FFD700',
         cornerSize: 12,
-      });
+      };
+
+      // Apply styles based on type
+      if (type === 'title') {
+        textProps.fontSize = 80;
+        textProps.fontWeight = 'bold';
+      } else if (type === 'subtitle') {
+        textProps.fontSize = 50;
+        textProps.fontWeight = '600';
+      } else if (type === 'caption' || type === 'date' || type === 'location') {
+        textProps.fontSize = 24;
+        textProps.fontWeight = '300';
+      } else if (type === 'neon') {
+        textProps.fill = '#f472b6'; // Pink
+        textProps.fontWeight = 'bold';
+        textProps.shadow = new fabric.Shadow({ color: '#f472b6', blur: 20, offsetX: 0, offsetY: 0 });
+      } else if (type === 'outline') {
+        textProps.fill = 'transparent';
+        textProps.stroke = '#ffffff';
+        textProps.strokeWidth = 2;
+        textProps.fontWeight = 'bold';
+        textProps.fontSize = 60;
+      } else if (type === 'shadow') {
+        textProps.fontWeight = 'bold';
+        textProps.shadow = new fabric.Shadow({ color: 'rgba(0,0,0,0.8)', blur: 5, offsetX: 5, offsetY: 5 });
+      } else if (type === 'textbox') {
+        textProps.backgroundColor = '#ffffff';
+        textProps.fill = '#000000';
+        textProps.padding = 10;
+        textProps.fontWeight = 'bold';
+      } else if (type === 'transparent-textbox') {
+        textProps.backgroundColor = 'rgba(0,0,0,0.5)';
+        textProps.padding = 10;
+      } else if (type === 'watermark') {
+        textProps.opacity = 0.3;
+        textProps.fontWeight = 'bold';
+        textProps.fontSize = 100;
+        textProps.angle = -45;
+      } else if (type === 'handwriting') {
+        textProps.fontFamily = 'cursive'; // Or a specific web font if loaded
+        textProps.fontStyle = 'italic';
+        textProps.fontSize = 60;
+      } else if (type === 'gradient') {
+        // Simple fallback for gradient text if gradient object fails
+        textProps.fontWeight = 'bold';
+        textProps.fontSize = 60;
+      } else if (type === 'sticker' || type === 'emoji') {
+         textProps.fontSize = 80;
+      }
+
+      const textObj = new fabric.IText(text, textProps);
+
+      // Apply proper gradient object if gradient type
+      if (type === 'gradient') {
+          const grad = new fabric.Gradient({
+             type: 'linear',
+             coords: { x1: 0, y1: 0, x2: textObj.width!, y2: 0 },
+             colorStops: [
+                 { offset: 0, color: '#c084fc' }, // purple-400
+                 { offset: 1, color: '#db2777' }  // pink-600
+             ]
+          });
+          textObj.set('fill', grad);
+      }
 
       fabricCanvas.add(textObj);
       fabricCanvas.setActiveObject(textObj);
@@ -440,10 +756,10 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         top: mainImage.top!,
         originX: 'center',
         originY: 'center',
-        fill: '#3b82f6', // Default brand blue
+        fill: '#FFD700', // Default brand blue
         transparentCorners: false,
         cornerColor: '#ffffff',
-        cornerStrokeColor: '#3b82f6',
+        cornerStrokeColor: '#FFD700',
         borderColor: '#ffffff',
         cornerSize: 12,
         shadow: new fabric.Shadow({
@@ -459,16 +775,27 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
 
       switch (pendingShape) {
         case 'rect':
-          shapeObj = new fabric.Rect({ ...commonProps, width: size, height: size, rx: 16, ry: 16 });
+          shapeObj = new fabric.Rect({ ...commonProps, width: size * 1.5, height: size });
+          break;
+        case 'square':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size, height: size });
+          break;
+        case 'rounded-rect':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size * 1.5, height: size, rx: 20, ry: 20 });
           break;
         case 'circle':
           shapeObj = new fabric.Circle({ ...commonProps, radius: size / 2 });
           break;
+        case 'oval':
+          shapeObj = new fabric.Ellipse({ ...commonProps, rx: size, ry: size / 2 });
+          break;
         case 'triangle':
           shapeObj = new fabric.Triangle({ ...commonProps, width: size, height: size });
           break;
+        case 'diamond':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size, height: size, angle: 45 });
+          break;
         case 'star':
-          // Approximating a star with a polygon for simplicity in standard fabric
           shapeObj = new fabric.Polygon([
             {x: 75, y: 0}, {x: 98, y: 46}, {x: 150, y: 53}, 
             {x: 112, y: 90}, {x: 121, y: 142}, {x: 75, y: 118}, 
@@ -481,6 +808,30 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             {x: 37.5, y: 0}, {x: 112.5, y: 0}, {x: 150, y: 65}, 
             {x: 112.5, y: 130}, {x: 37.5, y: 130}, {x: 0, y: 65}
           ], { ...commonProps });
+          break;
+        case 'line':
+          shapeObj = new fabric.Line([-size, 0, size, 0], { ...commonProps, fill: 'transparent', stroke: '#FFD700', strokeWidth: 10 });
+          break;
+        case 'dashed-line':
+          shapeObj = new fabric.Line([-size, 0, size, 0], { ...commonProps, fill: 'transparent', stroke: '#FFD700', strokeWidth: 10, strokeDashArray: [20, 10] });
+          break;
+        case 'arrow':
+          shapeObj = new fabric.Path('M 0 0 L 100 0 M 100 0 L 80 -20 M 100 0 L 80 20', { ...commonProps, fill: 'transparent', stroke: '#FFD700', strokeWidth: 10 });
+          break;
+        case 'double-arrow':
+          shapeObj = new fabric.Path('M 0 0 L 100 0 M 100 0 L 80 -20 M 100 0 L 80 20 M 0 0 L 20 -20 M 0 0 L 20 20', { ...commonProps, fill: 'transparent', stroke: '#FFD700', strokeWidth: 10 });
+          break;
+        case 'frame':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size * 1.5, height: size * 1.5, fill: 'transparent', stroke: '#ffffff', strokeWidth: 15 });
+          break;
+        case 'highlight':
+          shapeObj = new fabric.Rect({ ...commonProps, width: size * 2, height: size / 2, fill: 'rgba(250, 204, 21, 0.5)', shadow: undefined });
+          break;
+        case 'heart':
+          shapeObj = new fabric.Path('M 272.70141,238.71731 C 206.46141,238.71731 152.70146,292.4773 152.70146,358.71731 C 152.70146,493.47282 288.63461,528.80451 381.26391,662.02535 C 468.83815,529.62199 609.82641,489.17075 609.82641,358.71731 C 609.82641,292.47731 556.06651,238.7173 489.82641,238.71731 C 441.77851,238.71731 400.42481,267.08774 381.26391,307.90481 C 362.10311,267.08773 320.74931,238.7173 272.70141,238.71731 z ', { ...commonProps, scaleX: 0.3, scaleY: 0.3 });
+          break;
+        case 'callout':
+          shapeObj = new fabric.Path('M 0 0 L 100 0 L 100 80 L 60 80 L 40 120 L 40 80 L 0 80 Z', { ...commonProps });
           break;
       }
 
@@ -526,13 +877,13 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             const maskData = categoryMask.getAsFloat32Array();
 
             // The model outputs 1 for body, 0 for background. 
-            // We loop over all pixels and set Alpha = 0 where mask == 0
             for (let i = 0; i < maskData.length; i++) {
-                // maskData[i] is a float roughly around 0.0 (bg) to 1.0 (fg)
-                // Thresholding it
-                if (maskData[i] < 0.5) {
+                const isBackground = maskData[i] < 0.5;
+                const shouldRemove = bgRemovalTarget === 'background' ? isBackground : !isBackground;
+
+                if (shouldRemove) {
                     const pixelIndex = i * 4;
-                    imageData.data[pixelIndex + 3] = 0; // Set Alpha channel completely transparent
+                    imageData.data[pixelIndex + 3] = Math.round(bgRemovalOpacity * 2.55); // Set Alpha channel based on opacity
                 }
             }
             
@@ -555,7 +906,7 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         console.warn("Segmenter not loaded yet!");
         clearBgRemoval();
     }
-  }, [pendingBgRemoval, fabricCanvas, mainImage, segmenter, clearBgRemoval]);
+  }, [pendingBgRemoval, bgRemovalTarget, bgRemovalOpacity, fabricCanvas, mainImage, segmenter, clearBgRemoval]);
 
   // Execute Background Blur Action (Local AI via MediaPipe)
   useEffect(() => {
@@ -587,24 +938,29 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
             
             originalCtx.drawImage(imgElement, 0, 0);
             
-            // Draw blurred image
-            blurredCtx.filter = 'blur(16px)';
-            blurredCtx.drawImage(imgElement, 0, 0);
-            
             const originalData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
-            const blurredData = blurredCtx.getImageData(0, 0, blurredCanvas.width, blurredCanvas.height);
             const maskData = categoryMask.getAsFloat32Array();
 
             // Mix based on mask
+            // target == 'background' means blur background, keep person clear
+            // target == 'person' means blur person, keep background clear
+            // Blur intensity determines blur radius
+            blurredCtx.filter = `blur(${Math.max(1, Math.min(bgBlurIntensity / 4, 32))}px)`;
+            blurredCtx.drawImage(imgElement, 0, 0);
+
+            const newBlurredData = blurredCtx.getImageData(0, 0, blurredCanvas.width, blurredCanvas.height);
+
             for (let i = 0; i < maskData.length; i++) {
                 // maskData[i] is approx 0 for background, 1 for person
-                // If background (mask < 0.5), use blurred pixel
-                if (maskData[i] < 0.5) {
+                const isBackground = maskData[i] < 0.5;
+                const shouldBlur = bgBlurTarget === 'background' ? isBackground : !isBackground;
+
+                if (shouldBlur) {
                     const pixelIndex = i * 4;
-                    originalData.data[pixelIndex] = blurredData.data[pixelIndex];
-                    originalData.data[pixelIndex + 1] = blurredData.data[pixelIndex + 1];
-                    originalData.data[pixelIndex + 2] = blurredData.data[pixelIndex + 2];
-                    originalData.data[pixelIndex + 3] = blurredData.data[pixelIndex + 3];
+                    originalData.data[pixelIndex] = newBlurredData.data[pixelIndex];
+                    originalData.data[pixelIndex + 1] = newBlurredData.data[pixelIndex + 1];
+                    originalData.data[pixelIndex + 2] = newBlurredData.data[pixelIndex + 2];
+                    originalData.data[pixelIndex + 3] = newBlurredData.data[pixelIndex + 3];
                 }
             }
             
@@ -624,7 +980,7 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
         console.warn("Segmenter not loaded yet!");
         clearBgBlur();
     }
-  }, [pendingBgBlur, fabricCanvas, mainImage, segmenter, clearBgBlur]);
+  }, [pendingBgBlur, bgBlurTarget, bgBlurIntensity, fabricCanvas, mainImage, segmenter, clearBgBlur]);
 
   // Helper function to replace mainImage source safely
   const fabricInternalUpdateImageSrc = (img: fabric.Image, newSrc: string, canvas: fabric.Canvas, cleanup: () => void) => {
@@ -666,15 +1022,82 @@ export const EditorWorkspace = forwardRef<EditorWorkspaceRef, EditorWorkspacePro
     fabricCanvas.isDrawingMode = isDrawingMode;
     
     if (isDrawingMode) {
-        const brush = new fabric.PencilBrush(fabricCanvas);
+        let brush;
+        if (brushType === 'spray') {
+            brush = new fabric.SprayBrush(fabricCanvas);
+        } else if (brushType === 'marker') {
+            brush = new fabric.CircleBrush(fabricCanvas);
+        } else {
+            brush = new fabric.PencilBrush(fabricCanvas);
+        }
+
         brush.color = brushColor;
         brush.width = brushWidth;
         fabricCanvas.freeDrawingBrush = brush;
     }
-  }, [isDrawingMode, brushColor, brushWidth, fabricCanvas]);
+  }, [isDrawingMode, brushColor, brushWidth, brushType, fabricCanvas]);
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
+    undo: () => {
+        if (!fabricCanvas || historyIndex <= 0) return;
+
+        isHistoryAction.current = true;
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+
+        fabricCanvas.loadFromJSON(history[newIndex], () => {
+            fabricCanvas.requestRenderAll();
+            // Re-find main image after load
+            const objs = fabricCanvas.getObjects('image');
+            if (objs.length > 0) {
+                const img = objs[0] as fabric.Image;
+                setMainImage(img);
+                syncStoreWithImage(img);
+            }
+            // Delay unlocking to let React state flush
+            setTimeout(() => {
+                isHistoryAction.current = false;
+            }, 50);
+        });
+    },
+    redo: () => {
+        if (!fabricCanvas || historyIndex >= history.length - 1) return;
+
+        isHistoryAction.current = true;
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+
+        fabricCanvas.loadFromJSON(history[newIndex], () => {
+            fabricCanvas.requestRenderAll();
+            // Re-find main image after load
+            const objs = fabricCanvas.getObjects('image');
+            if (objs.length > 0) {
+                const img = objs[0] as fabric.Image;
+                setMainImage(img);
+                syncStoreWithImage(img);
+            }
+            // Delay unlocking to let React state flush
+            setTimeout(() => {
+                isHistoryAction.current = false;
+            }, 50);
+        });
+    },
+    zoomIn: () => {
+        if (!fabricCanvas) return;
+        let zoom = fabricCanvas.getZoom() * 1.1;
+        if (zoom > 20) zoom = 20;
+        fabricCanvas.zoomToPoint(new fabric.Point(fabricCanvas.width! / 2, fabricCanvas.height! / 2), zoom);
+    },
+    zoomOut: () => {
+        if (!fabricCanvas) return;
+        let zoom = fabricCanvas.getZoom() / 1.1;
+        if (zoom < 0.05) zoom = 0.05;
+        fabricCanvas.zoomToPoint(new fabric.Point(fabricCanvas.width! / 2, fabricCanvas.height! / 2), zoom);
+    },
+    getZoom: () => {
+        return fabricCanvas ? Math.round(fabricCanvas.getZoom() * 100) : 100;
+    },
     exportImage: () => {
       if (!fabricCanvas) return;
       

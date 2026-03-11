@@ -5,7 +5,7 @@ export interface GeometryState {
   flipX: boolean;
   flipY: boolean;
   straighten: number;   // -45 to 45
-  aspectRatio: number | 'free'; 
+  aspectRatio: number | 'free' | 'original';
   skewX: number;
   skewY: number;
 }
@@ -53,6 +53,8 @@ const defaultGeometry: GeometryState = {
 };
 
 interface EditorStore {
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
   activeTool: 'adjust' | 'filters' | 'crop' | 'overlays' | 'ai';
   adjustments: WebGLAdjustments;
   geometry: GeometryState;
@@ -61,6 +63,9 @@ interface EditorStore {
   setAdjustment: (key: keyof WebGLAdjustments, value: number) => void;
   resetAdjustments: () => void;
   
+  activeFilter: string | null;
+  setActiveFilter: (filterName: string | null) => void;
+
   setGeometry: (key: keyof GeometryState, value: any) => void;
   resetGeometry: () => void;
   
@@ -69,12 +74,12 @@ interface EditorStore {
   clearCropTrigger: () => void;
   
   // Overlays
-  pendingText: string | null;
-  triggerAddText: (text?: string) => void;
+  pendingText: { text: string, type: 'title' | 'subtitle' | 'caption' | 'body' | 'watermark' | 'handwriting' | 'textbox' | 'transparent-textbox' | 'shadow' | 'outline' | 'neon' | 'gradient' | 'sticker' | 'emoji' | 'date' | 'location' } | null;
+  triggerAddText: (text: string, type: 'title' | 'subtitle' | 'caption' | 'body' | 'watermark' | 'handwriting' | 'textbox' | 'transparent-textbox' | 'shadow' | 'outline' | 'neon' | 'gradient' | 'sticker' | 'emoji' | 'date' | 'location') => void;
   clearAddText: () => void;
   
-  pendingShape: 'rect' | 'circle' | 'triangle' | 'star' | 'polygon' | null;
-  triggerAddShape: (shape: 'rect' | 'circle' | 'triangle' | 'star' | 'polygon') => void;
+  pendingShape: 'rect' | 'square' | 'circle' | 'oval' | 'triangle' | 'line' | 'arrow' | 'double-arrow' | 'star' | 'heart' | 'polygon' | 'diamond' | 'rounded-rect' | 'dashed-line' | 'highlight' | 'frame' | 'callout' | null;
+  triggerAddShape: (shape: 'rect' | 'square' | 'circle' | 'oval' | 'triangle' | 'line' | 'arrow' | 'double-arrow' | 'star' | 'heart' | 'polygon' | 'diamond' | 'rounded-rect' | 'dashed-line' | 'highlight' | 'frame' | 'callout') => void;
   clearAddShape: () => void;
   
   // Selection State
@@ -84,10 +89,18 @@ interface EditorStore {
   
   // Local AI
   pendingBgRemoval: boolean;
+  bgRemovalTarget: 'person' | 'background';
+  setBgRemovalTarget: (target: 'person' | 'background') => void;
+  bgRemovalOpacity: number;
+  setBgRemovalOpacity: (opacity: number) => void;
   triggerBgRemoval: () => void;
   clearBgRemoval: () => void;
   
   pendingBgBlur: boolean;
+  bgBlurTarget: 'person' | 'background';
+  setBgBlurTarget: (target: 'person' | 'background') => void;
+  bgBlurIntensity: number;
+  setBgBlurIntensity: (val: number) => void;
   triggerBgBlur: () => void;
   clearBgBlur: () => void;
   
@@ -95,12 +108,16 @@ interface EditorStore {
   isDrawingMode: boolean;
   setDrawingMode: (isDrawing: boolean) => void;
   brushColor: string;
+  brushType: 'pencil' | 'marker' | 'spray';
+  setBrushType: (type: 'pencil' | 'marker' | 'spray') => void;
   setBrushColor: (color: string) => void;
   brushWidth: number;
   setBrushWidth: (width: number) => void;
 }
 
 export const useEditorStore = create<EditorStore>((set) => ({
+  theme: 'light',
+  setTheme: (theme) => set({ theme }),
   activeTool: 'adjust', // Default tab
   adjustments: { ...defaultAdjustments },
   geometry: { ...defaultGeometry },
@@ -118,6 +135,9 @@ export const useEditorStore = create<EditorStore>((set) => ({
     })),
   resetAdjustments: () => set({ adjustments: { ...defaultAdjustments } }),
   
+  activeFilter: null,
+  setActiveFilter: (filterName) => set({ activeFilter: filterName }),
+
   setGeometry: (key, value) => 
     set((state) => ({
       geometry: {
@@ -130,7 +150,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   triggerCrop: () => set({ pendingCrop: true }),
   clearCropTrigger: () => set({ pendingCrop: false }),
   
-  triggerAddText: (text = 'Double click to edit') => set({ pendingText: text }),
+  triggerAddText: (text, type) => set({ pendingText: { text, type } }),
   clearAddText: () => set({ pendingText: null }),
   
   triggerAddShape: (shape) => set({ pendingShape: shape }),
@@ -141,16 +161,26 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setSelectedObject: (id, type) => set({ selectedObjectId: id, selectedObjectType: type }),
   
   pendingBgRemoval: false,
+  bgRemovalTarget: 'person',
+  setBgRemovalTarget: (target) => set({ bgRemovalTarget: target }),
+  bgRemovalOpacity: 0,
+  setBgRemovalOpacity: (opacity) => set({ bgRemovalOpacity: opacity }),
   triggerBgRemoval: () => set({ pendingBgRemoval: true }),
   clearBgRemoval: () => set({ pendingBgRemoval: false }),
   
   pendingBgBlur: false,
+  bgBlurTarget: 'background',
+  setBgBlurTarget: (target) => set({ bgBlurTarget: target }),
+  bgBlurIntensity: 50,
+  setBgBlurIntensity: (val) => set({ bgBlurIntensity: val }),
   triggerBgBlur: () => set({ pendingBgBlur: true }),
   clearBgBlur: () => set({ pendingBgBlur: false }),
   
   isDrawingMode: false,
   setDrawingMode: (isDrawing) => set({ isDrawingMode: isDrawing }),
-  brushColor: '#3b82f6',
+  brushColor: '#FFD700',
+  brushType: 'pencil',
+  setBrushType: (type) => set({ brushType: type }),
   setBrushColor: (color) => set({ brushColor: color }),
   brushWidth: 5,
   setBrushWidth: (width) => set({ brushWidth: width }),
