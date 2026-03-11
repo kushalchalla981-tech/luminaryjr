@@ -20,74 +20,62 @@ export function OverlaysPanel() {
       
       <div className="flex flex-col gap-8 overflow-y-auto pb-10 custom-scrollbar pr-2">
         
-        {/* Text Section */}
+        {/* Typography */}
         <div className="flex flex-col gap-3">
             <span className="text-xs font-semibold text-slate-400">Typography</span>
             <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={() => triggerAddText('Title Text')}
-                  className="py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-blue-500/30 transition-all flex flex-col items-center justify-center gap-1 group"
-                >
-                    <span className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">T</span>
-                    <span className="text-[10px] text-slate-400 font-medium">Add Head</span>
-                </button>
-                <button 
-                  onClick={() => triggerAddText('Body text goes here...')}
-                  className="py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-blue-500/30 transition-all flex flex-col items-center justify-center gap-1 group"
-                >
-                    <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">Aa</span>
-                    <span className="text-[10px] text-slate-400 font-medium">Add Body</span>
-                </button>
+                <button onClick={() => triggerAddText('TITLE TEXT', 'title')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-lg font-black text-white transition-colors">Title</button>
+                <button onClick={() => triggerAddText('Subtitle Text', 'subtitle')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-base font-semibold text-white transition-colors">Subtitle</button>
+                <button onClick={() => triggerAddText('Body text goes here...', 'body')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-normal text-white transition-colors">Body</button>
+                <button onClick={() => triggerAddText('Caption text', 'caption')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-xs font-light text-slate-300 transition-colors">Caption</button>
             </div>
-            {/* Future expansion: Fonts, colors, bold, italic controls will appear when text is selected on canvas */}
+
+            <span className="text-xs font-semibold text-slate-400 mt-2">Special Text</span>
+            <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => triggerAddText('Neon Text', 'neon')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-bold text-pink-400 drop-shadow-[0_0_8px_rgba(244,114,182,0.8)] transition-colors">Neon</button>
+                <button onClick={() => triggerAddText('OUTLINE', 'outline')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-black text-transparent stroke-white stroke-2" style={{ WebkitTextStroke: '1px white' }}>Outline</button>
+                <button onClick={() => triggerAddText('Shadow Text', 'shadow')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-bold text-white drop-shadow-[3px_3px_2px_rgba(0,0,0,0.8)] transition-colors">Shadow</button>
+                <button onClick={() => triggerAddText('Text Box', 'textbox')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-bold text-black bg-white/90 mx-2 my-1 transition-colors">Text Box</button>
+                <button onClick={() => triggerAddText('Transparent Box', 'transparent-textbox')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-bold text-white bg-black/40 mx-2 my-1 transition-colors">Transp. Box</button>
+                <button onClick={() => triggerAddText('Gradient', 'gradient')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 transition-colors">Gradient</button>
+                <button onClick={() => triggerAddText('Watermark', 'watermark')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-black text-white/30 tracking-widest transition-colors">Watermark</button>
+                <button onClick={() => triggerAddText('Handwriting', 'handwriting')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-medium italic font-serif text-white transition-colors">Handwriting</button>
+                <button onClick={() => triggerAddText('✨ Sticker ✨', 'sticker')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-sm font-bold text-yellow-300 transition-colors">Sticker</button>
+                <button onClick={() => triggerAddText('🔥🚀', 'emoji')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-lg transition-colors">Emoji</button>
+                <button onClick={() => triggerAddText(new Date().toLocaleDateString(), 'date')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-xs font-mono text-white transition-colors">Date Stamp</button>
+                <button onClick={() => triggerAddText('📍 Location', 'location')} className="py-2 rounded bg-white/5 hover:bg-white/10 text-xs font-semibold text-white transition-colors">Location</button>
+            </div>
         </div>
 
         {/* Basic Shapes */}
         <div className="flex flex-col gap-3">
-            <span className="text-xs font-semibold text-slate-400">Shapes & Elements</span>
-            <div className="grid grid-cols-3 gap-2">
-                <button 
-                  onClick={() => triggerAddShape('rect')}
-                  className="aspect-square rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors border border-transparent hover:border-white/10" 
-                  title="Rectangle"
-                >
-                    <div className="w-6 h-6 border-2 border-current rounded-sm" />
-                </button>
-                <button 
-                  onClick={() => triggerAddShape('circle')}
-                  className="aspect-square rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors border border-transparent hover:border-white/10" 
-                  title="Circle"
-                >
-                    <div className="w-6 h-6 border-2 border-current rounded-full" />
-                </button>
-                <button 
-                  onClick={() => triggerAddShape('triangle')}
-                  className="aspect-square rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors border border-transparent hover:border-white/10" 
-                  title="Triangle"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg>
-                </button>
-                <button 
-                  onClick={() => triggerAddShape('star')}
-                  className="aspect-square rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors border border-transparent hover:border-white/10" 
-                  title="Star"
-                >
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                </button>
-                <button 
-                  onClick={() => triggerAddShape('polygon')}
-                  className="aspect-square rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors border border-transparent hover:border-white/10" 
-                  title="Hexagon"
-                >
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                </button>
+            <span className="text-xs font-semibold text-slate-400">Shapes</span>
+            <div className="grid grid-cols-4 gap-2">
+                <button onClick={() => triggerAddShape('rect')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Rectangle"><div className="w-5 h-4 border border-current" /></button>
+                <button onClick={() => triggerAddShape('square')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Square"><div className="w-5 h-5 border border-current" /></button>
+                <button onClick={() => triggerAddShape('rounded-rect')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Rounded Rectangle"><div className="w-6 h-4 border border-current rounded-sm" /></button>
+                <button onClick={() => triggerAddShape('circle')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Circle"><div className="w-5 h-5 border border-current rounded-full" /></button>
+                <button onClick={() => triggerAddShape('oval')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Oval"><div className="w-6 h-4 border border-current rounded-[50%]" /></button>
+                <button onClick={() => triggerAddShape('triangle')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Triangle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg></button>
+                <button onClick={() => triggerAddShape('diamond')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Diamond"><div className="w-4 h-4 border border-current rotate-45" /></button>
+                <button onClick={() => triggerAddShape('polygon')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Hexagon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></button>
+                <button onClick={() => triggerAddShape('star')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Star"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+                <button onClick={() => triggerAddShape('heart')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Heart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button>
+                <button onClick={() => triggerAddShape('callout')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Speech Bubble"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
             </div>
-            
-            <p className="text-[10px] text-slate-500 mt-2 text-center leading-relaxed">
-              Click elements to add them to the canvas.<br/>
-              You can drag, resize, and rotate objects directly.
-              Select an object to reveal style properties.
-            </p>
+        </div>
+
+        {/* Lines & Marks */}
+        <div className="flex flex-col gap-3">
+            <span className="text-xs font-semibold text-slate-400">Lines & Marks</span>
+            <div className="grid grid-cols-4 gap-2">
+                <button onClick={() => triggerAddShape('line')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Line"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="19" x2="19" y2="5"/></svg></button>
+                <button onClick={() => triggerAddShape('dashed-line')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Dashed Line"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4"><line x1="5" y1="19" x2="19" y2="5"/></svg></button>
+                <button onClick={() => triggerAddShape('arrow')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+                <button onClick={() => triggerAddShape('double-arrow')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Double Arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                <button onClick={() => triggerAddShape('frame')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Frame"><div className="w-5 h-5 border-4 border-current" /></button>
+                <button onClick={() => triggerAddShape('highlight')} className="aspect-square rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" title="Highlight"><div className="w-6 h-3 bg-yellow-400/50 rounded-sm" /></button>
+            </div>
         </div>
 
         {/* Freehand Drawing */}
@@ -97,7 +85,7 @@ export function OverlaysPanel() {
                 <button 
                   onClick={() => setDrawingMode(!isDrawingMode)}
                   className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
-                      isDrawingMode ? 'bg-blue-500 text-white' : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                      isDrawingMode ? 'bg-yellow-500 text-white' : 'bg-white/10 text-slate-300 hover:bg-white/20'
                   }`}
                 >
                     {isDrawingMode ? 'Drawing On' : 'Drawing Off'}
@@ -130,10 +118,10 @@ export function OverlaysPanel() {
                             max={50}
                             value={brushWidth}
                             onChange={(e) => setBrushWidth(parseInt(e.target.value))}
-                            className="w-full h-1.5 appearance-none rounded-full bg-white/10 cursor-pointer accent-blue-500 focus:outline-none"
+                            className="w-full h-1.5 appearance-none rounded-full bg-white/10 cursor-pointer accent-yellow-500 focus:outline-none"
                         />
                     </div>
-                    <p className="text-[10px] text-blue-300/70 leading-relaxed text-center mt-2">
+                    <p className="text-[10px] text-yellow-300/70 leading-relaxed text-center mt-2">
                         Draw directly on the image canvas.
                     </p>
                 </div>

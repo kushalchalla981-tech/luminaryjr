@@ -12,13 +12,11 @@ interface LayoutProps {
 
 export function Layout({ children, hasImage, onExport, onNewImage }: LayoutProps) {
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-neutral-950 text-slate-100 transition-colors duration-500">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-black text-slate-100 transition-colors duration-500">
       
-      {!hasImage && (
-        <div className="absolute inset-0 z-0 opacity-40">
-           <BackgroundPaths showContent={false} />
-        </div>
-      )}
+      <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
+         <BackgroundPaths showContent={false} />
+      </div>
 
       
       {/* Top Bar - Command Center */}
@@ -26,7 +24,7 @@ export function Layout({ children, hasImage, onExport, onNewImage }: LayoutProps
         
         {/* Left: Branding */}
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500/20 text-yellow-400">
             <ImageIcon size={18} />
           </div>
           <h1 className="text-sm font-semibold tracking-wide">LuminaryJr</h1>
@@ -66,7 +64,7 @@ export function Layout({ children, hasImage, onExport, onNewImage }: LayoutProps
               </button>
               <InteractiveButton 
                 onClick={onExport}
-                className="bg-blue-600 hover:bg-blue-500 px-6 py-2 h-9 rounded-full text-xs font-bold shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                className="bg-yellow-600 hover:bg-yellow-500 px-6 py-2 h-9 rounded-full text-xs font-bold shadow-[0_0_15px_rgba(218,165,32,0.4)]"
                 containerClassName="h-9"
               >
                 <Download size={14} />

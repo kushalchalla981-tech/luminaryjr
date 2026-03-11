@@ -5,7 +5,7 @@ export interface GeometryState {
   flipX: boolean;
   flipY: boolean;
   straighten: number;   // -45 to 45
-  aspectRatio: number | 'free'; 
+  aspectRatio: number | 'free' | 'original';
   skewX: number;
   skewY: number;
 }
@@ -69,12 +69,12 @@ interface EditorStore {
   clearCropTrigger: () => void;
   
   // Overlays
-  pendingText: string | null;
-  triggerAddText: (text?: string) => void;
+  pendingText: { text: string, type: 'title' | 'subtitle' | 'caption' | 'body' | 'watermark' | 'handwriting' | 'textbox' | 'transparent-textbox' | 'shadow' | 'outline' | 'neon' | 'gradient' | 'sticker' | 'emoji' | 'date' | 'location' } | null;
+  triggerAddText: (text: string, type: 'title' | 'subtitle' | 'caption' | 'body' | 'watermark' | 'handwriting' | 'textbox' | 'transparent-textbox' | 'shadow' | 'outline' | 'neon' | 'gradient' | 'sticker' | 'emoji' | 'date' | 'location') => void;
   clearAddText: () => void;
   
-  pendingShape: 'rect' | 'circle' | 'triangle' | 'star' | 'polygon' | null;
-  triggerAddShape: (shape: 'rect' | 'circle' | 'triangle' | 'star' | 'polygon') => void;
+  pendingShape: 'rect' | 'square' | 'circle' | 'oval' | 'triangle' | 'line' | 'arrow' | 'double-arrow' | 'star' | 'heart' | 'polygon' | 'diamond' | 'rounded-rect' | 'dashed-line' | 'highlight' | 'frame' | 'callout' | null;
+  triggerAddShape: (shape: 'rect' | 'square' | 'circle' | 'oval' | 'triangle' | 'line' | 'arrow' | 'double-arrow' | 'star' | 'heart' | 'polygon' | 'diamond' | 'rounded-rect' | 'dashed-line' | 'highlight' | 'frame' | 'callout') => void;
   clearAddShape: () => void;
   
   // Selection State
@@ -130,7 +130,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   triggerCrop: () => set({ pendingCrop: true }),
   clearCropTrigger: () => set({ pendingCrop: false }),
   
-  triggerAddText: (text = 'Double click to edit') => set({ pendingText: text }),
+  triggerAddText: (text, type) => set({ pendingText: { text, type } }),
   clearAddText: () => set({ pendingText: null }),
   
   triggerAddShape: (shape) => set({ pendingShape: shape }),
@@ -150,7 +150,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   
   isDrawingMode: false,
   setDrawingMode: (isDrawing) => set({ isDrawingMode: isDrawing }),
-  brushColor: '#3b82f6',
+  brushColor: '#FFD700',
   setBrushColor: (color) => set({ brushColor: color }),
   brushWidth: 5,
   setBrushWidth: (width) => set({ brushWidth: width }),

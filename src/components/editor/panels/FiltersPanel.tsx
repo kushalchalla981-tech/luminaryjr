@@ -29,35 +29,18 @@ export function FiltersPanel() {
         </button>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto custom-scrollbar pb-2">
-        {filterCategories.map((cat: { name: string, filters: any[] }) => (
-          <button
-            key={cat.name}
-            onClick={() => setActiveCategory(cat.name)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-              activeCategory === cat.name 
-                ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' 
-                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            {cat.name}
-          </button>
-        ))}
-      </div>
-
       {/* Filter Grid */}
       <div className="grid grid-cols-2 gap-4 overflow-y-auto pb-10 custom-scrollbar pr-2">
-        {filterCategories.find((c) => c.name === activeCategory)?.filters.map((filter) => (
+        {filterCategories[0].filters.map((filter) => (
           <div 
             key={filter.name}
             onClick={() => handleApplyFilter(filter)}
             className="group relative cursor-pointer flex flex-col items-center gap-2"
           >
-            <div className="w-full aspect-square rounded-xl bg-slate-800 border border-white/10 overflow-hidden relative transition-all group-hover:border-blue-500/50 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+            <div className="w-full aspect-square rounded-xl bg-slate-800 border border-white/10 overflow-hidden relative transition-all group-hover:border-yellow-500/50 group-hover:shadow-[0_0_20px_rgba(255,215,0,0.3)]">
                {/* A generic thumbnail placeholder to represent the filter vibe */}
                <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900" />
-               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-blue-500/10 transition-opacity" />
+               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-yellow-500/10 transition-opacity" />
                <div className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                </div>

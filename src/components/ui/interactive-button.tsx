@@ -76,7 +76,7 @@ export const InteractiveButton = React.forwardRef<HTMLButtonElement, Interactive
         {/* Outer Glow Shadow */}
         <motion.div
           animate={isHovered ? { opacity: 0.4, scale: 1.1 } : { opacity: 0, scale: 1 }}
-          className="absolute inset-0 -z-10 rounded-2xl bg-blue-500/30 blur-2xl pointer-events-none"
+          className="absolute inset-0 -z-10 rounded-2xl bg-yellow-500/30 blur-2xl pointer-events-none"
         />
       </div>
     );

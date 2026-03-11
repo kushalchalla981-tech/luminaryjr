@@ -49,7 +49,7 @@ export function AdjustmentsPanel() {
               >
                 {ctrl.label}
               </label>
-              <span className="text-xs font-mono text-slate-500 group-hover:text-blue-400 w-8 text-right transition-colors">
+              <span className="text-xs font-mono text-slate-500 group-hover:text-yellow-400 w-8 text-right transition-colors">
                 {val > 0 ? `+${val}` : val}
               </span>
             </div>
@@ -70,7 +70,7 @@ export function AdjustmentsPanel() {
                 className="
                   w-full h-1.5 appearance-none rounded-full bg-white/10
                   cursor-pointer z-10 transition-all
-                  focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                  focus:outline-none focus:ring-2 focus:ring-yellow-500/50
                   [&::-webkit-slider-thumb]:appearance-none 
                   [&::-webkit-slider-thumb]:w-4 
                   [&::-webkit-slider-thumb]:h-4 
@@ -84,8 +84,8 @@ export function AdjustmentsPanel() {
                   background: `linear-gradient(to right, 
                     rgba(255,255,255,0.1) 0%, 
                     rgba(255,255,255,0.1) ${ctrl.min < 0 ? 50 : 0}%, 
-                    #3b82f6 ${Math.min(percentage, ctrl.min < 0 ? 50 : 0)}%, 
-                    #3b82f6 ${Math.max(percentage, ctrl.min < 0 ? 50 : 0)}%, 
+                    #FFD700 ${Math.min(percentage, ctrl.min < 0 ? 50 : 0)}%,
+                    #FFD700 ${Math.max(percentage, ctrl.min < 0 ? 50 : 0)}%,
                     rgba(255,255,255,0.1) ${Math.max(percentage, ctrl.min < 0 ? 50 : 0)}%, 
                     rgba(255,255,255,0.1) 100%)`
                 }}
